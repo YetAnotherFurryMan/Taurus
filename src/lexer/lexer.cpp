@@ -1,22 +1,23 @@
 #include <lexer/lexer.hpp>
 
 #include <array>
+#include <unordered_map>
 
 #include <cctype>
 
 namespace trs::lexer{
     void Lexer::set_source(const std::string& src){
-        this->src = src;
+        this->m_Source = src;
         reset();
     }
 
     void Lexer::reset(){
-        this->pos = 0;
+        this->m_Positition = 0;
     }
 
     Token Lexer::next(){
-        std::string_view value{ this->src };
-        value = value.substr(this->pos);
+        std::string_view value{ this->m_Source };
+        value = value.substr(this->m_Positition);
 
         if(value.empty())
             return {type: TokenType::TT_EMPTY};
@@ -24,94 +25,57 @@ namespace trs::lexer{
         char ch = 0;
         size_t pos = 0;
         TokenType type = TokenType::TT_EMPTY;
-        BaseTokenType base = BaseTokenType::BTT_EMPTY;
 
-        do{
-            ch = value[pos];
-            base = type_of(ch);
+        // Skipp white characters
+        while(pos < value.length() && (value[pos] == ' ' || value[pos] == '\t'))
             pos++;
-        } while(pos < value.length() && base == BaseTokenType::BTT_WHITE);
 
-        if(pos - 1 > 0){
-            value = value.substr(pos - 1);
-            this->pos += pos - 1;
-            pos = 1;
+        if(pos > 0){
+            value = value.substr(pos);
+            this->m_Positition += pos;
+            pos = 0;
         }
 
-        switch(base){
-            case BaseTokenType::BTT_EMPTY:
-            case BaseTokenType::BTT_WHITE:
-                this->pos += pos;
-                return {type: TokenType::TT_EMPTY};
-            case BaseTokenType::BTT_SEPARATOR:
-                this->pos += pos;
-                return {type: TokenType::TT_SEPARATOR};
-            case BaseTokenType::BTT_OPERATOR:
-                this->pos += pos;
-                return {value: value.substr(0, pos), type: TokenType::TT_OPERATOR};
-            case BaseTokenType::BTT_NUMBER:
-                type = get_number(pos);
-                break;
-            case BaseTokenType::BTT_CHAR:
-                type = get_identifier(pos);
-                if(type != TokenType::TT_IDENTIFIER){
-                    this->pos += pos;
-                    return {type: type};
-                }
-                break;
+        // Operator-case
+        std::array<char, 23> operators = {
+            '+', '-', '*', '/', '%', '&', '|', '^', '!', '~', '(', ')', ':', '=', '<', '>', '?', ',', '.', '[', ']', '{', '}'
+        };
+
+        for(char c: operators){
+            if(c == value[0]){
+                this->m_Positition++;
+                return {value: value.substr(0, 1), type: TokenType::TT_OPERATOR};
+            }
         }
 
-        this->pos += pos;
+        // Separator-case
+        if(value[0] == '\n' || value[0] == ';'){
+            this->m_Positition++;
+            return {type: TokenType::TT_SEPARATOR};
+        }
+
+        // Number-case, identifier-case and error-case
+        if(value[0] >= '0' && value[0] <= '9'){
+            type = get_number(pos);
+        } else if(value[0] == '_' || (value[0] >= 'A' && value[0] <= 'Z') || (value[0] >= 'a' && value[0] <= 'z')){
+            type = get_identifier(pos);
+        } else{
+            // TODO: Lexer error!!!
+            this->m_Positition++;
+            return {type: TokenType::TT_EMPTY};
+        }
+
+        //Update global position
+        this->m_Positition += pos;
 
         return {value: value.substr(0, pos), type: type};
     }
 
-    BaseTokenType Lexer::type_of(unsigned char c){
-        switch(c){
-            case '+':
-            case '-':
-            case '*':
-            case '/':
-            case '%':
-            case '&':
-            case '|':
-            case '^':
-            case '!':
-            case '~':
-            case '(':
-            case ')':
-            case ':':
-            case '=':
-            case '<':
-            case '>':
-            case '?':
-            case ',':
-            case '.':
-            case '[':
-            case ']':
-            case '{':
-            case '}':
-                return BaseTokenType::BTT_OPERATOR;
-            case ' ':
-            case '\t':
-                return BaseTokenType::BTT_WHITE;
-            case ';':
-            case '\n':
-                return BaseTokenType::BTT_SEPARATOR;
-            case '0' ... '9':
-                return BaseTokenType::BTT_NUMBER;
-            case '_':
-            case 'A' ... 'Z':
-            case 'a' ... 'z':
-                return BaseTokenType::BTT_CHAR;
-        }
-
-        return BaseTokenType::BTT_EMPTY;
-    }
-
     TokenType Lexer::get_number(size_t& pos){
-        std::string_view value = this->src;
-        value = value.substr(this->pos);
+        std::string_view value = this->m_Source;
+        value = value.substr(this->m_Positition);
+
+        // First character already checked
         pos = 1;
 
         if(value.length() == 1)
@@ -120,31 +84,35 @@ namespace trs::lexer{
         TokenType type = TokenType::TT_NUMBER_DEC;
         char get_id = 0;
 
+        // Octal numbers starts with 0 (e.g. 012 = 10)
         if(value[0] == '0'){
             type = TokenType::TT_NUMBER_OCT;
             get_id = 1;
         }
         
-        switch(type_of(value[1])){
-            case BaseTokenType::BTT_NUMBER:
+        switch(value[1]){
+            // Decimal number
+            case '0' ... '9':
                 break;
-            case BaseTokenType::BTT_CHAR:
-                if(value[1] == 'x'){
-                    type = TokenType::TT_NUMBER_HEX;
-                    get_id = 2;
-                } else if(value[1] == 'b'){
-                    type = TokenType::TT_NUMBER_BIN;
-                    get_id = 3;
-                } else {
-                    return TokenType::TT_EMPTY;
-                }
-
+            // Hexadecimal number (skipp x) (e.g. 0xa = 10)
+            case 'x':
+                type = TokenType::TT_NUMBER_HEX;
+                get_id = 2;
                 pos++;
                 break;
+            // Binary number (skipp b) (e.g. 0b1010 = 10)
+            case 'b':
+                type = TokenType::TT_NUMBER_BIN;
+                get_id = 3;
+                pos++;
+                break;
+            // Error case
             default:
-                return type;
+                // TODO: Error case!!!
+                return TokenType::TT_EMPTY;
         }
 
+        // Validation functions
         using get_t = bool(char);
         std::array<get_t*, 4> get = {
             [](char c){ return c >= '0' && c <= '9'; },
@@ -153,6 +121,7 @@ namespace trs::lexer{
             [](char c){ return c == '0' || c == '1'; }
         };
 
+        // Move position to last valid character
         pos++;
         while(pos < value.length() && get[get_id](value[pos]))
             pos++;
@@ -161,42 +130,44 @@ namespace trs::lexer{
     }
 
     TokenType Lexer::get_identifier(size_t& pos){
-        std::string_view value = this->src;
-        value = value.substr(this->pos);
+        std::string_view value = this->m_Source;
+        value = value.substr(this->m_Positition);
 
+        // First character already checked
         pos = 1;
 
+        // Move position to last valid character
         while(pos < value.length() && (value[pos] == '_' || std::isalnum(value[pos])))
             pos++;
 
-        std::pair<TokenType, const char*> keywords[] = {
-            {TokenType::TT_KW_VAR, "var"},
-            {TokenType::TT_KW_CONST, "const"},
-            {TokenType::TT_KW_TYPE_U8, "u8"},
-            {TokenType::TT_KW_TYPE_U16, "u16"},
-            {TokenType::TT_KW_TYPE_U32, "u32"},
-            {TokenType::TT_KW_TYPE_U64, "u64"},
-            {TokenType::TT_KW_TYPE_U128, "u128"},
-            {TokenType::TT_KW_TYPE_USIZE, "usize"},
-            {TokenType::TT_KW_TYPE_I8, "i8"},
-            {TokenType::TT_KW_TYPE_I16, "i16"},
-            {TokenType::TT_KW_TYPE_I32, "i32"},
-            {TokenType::TT_KW_TYPE_I64, "i64"},
-            {TokenType::TT_KW_TYPE_I128, "i128"},
-            {TokenType::TT_KW_TYPE_ISIZE, "isize"},
-            {TokenType::TT_KW_TYPE_F32, "f32"},
-            {TokenType::TT_KW_TYPE_F64, "f64"},
-            {TokenType::TT_KW_TYPE_FSIZE, "fsize"},
-            {TokenType::TT_KW_TYPE_SIZE, "size"},
-            {TokenType::TT_KW_TYPE_CHAR, "char"},
-            {TokenType::TT_KW_TYPE_STR, "str"}
+        // Keyword-case
+        std::unordered_map<std::string_view, TokenType> keywords = {
+            {"var", TokenType::TT_KW_VAR},
+            {"const", TokenType::TT_KW_CONST},
+            {"u8", TokenType::TT_KW_TYPE_U8},
+            {"u16", TokenType::TT_KW_TYPE_U16},
+            {"u32", TokenType::TT_KW_TYPE_U32},
+            {"u64", TokenType::TT_KW_TYPE_U64},
+            {"u128", TokenType::TT_KW_TYPE_U128},
+            {"usize", TokenType::TT_KW_TYPE_USIZE},
+            {"i8", TokenType::TT_KW_TYPE_I8},
+            {"i16", TokenType::TT_KW_TYPE_I16},
+            {"i32", TokenType::TT_KW_TYPE_I32},
+            {"i64", TokenType::TT_KW_TYPE_I64},
+            {"i128", TokenType::TT_KW_TYPE_I128},
+            {"isize", TokenType::TT_KW_TYPE_ISIZE},
+            {"f32", TokenType::TT_KW_TYPE_F32},
+            {"f64", TokenType::TT_KW_TYPE_F64},
+            {"fsize", TokenType::TT_KW_TYPE_FSIZE},
+            {"size", TokenType::TT_KW_TYPE_SIZE},
+            {"char", TokenType::TT_KW_TYPE_CHAR},
+            {"str", TokenType::TT_KW_TYPE_STR}
         };
 
         value = value.substr(0, pos);
-        for(auto& kw: keywords){
-            if(value == kw.second)
-                return kw.first;
-        }
+        
+        if(keywords.contains(value))
+            return keywords[value];
         
         return TokenType::TT_IDENTIFIER;
     }

@@ -41,15 +41,6 @@ namespace trs::lexer{
         TT_KW_TYPE_STR
     };
 
-    enum class BaseTokenType{
-        BTT_EMPTY = 0,
-        BTT_NUMBER,
-        BTT_CHAR,
-        BTT_OPERATOR,
-        BTT_WHITE,
-        BTT_SEPARATOR
-    };
-
     struct Token{
         std::optional<std::string_view> value;
         TokenType type = TokenType::TT_EMPTY;
@@ -60,11 +51,10 @@ namespace trs::lexer{
         void set_source(const std::string& src);
         void reset();
         Token next();
-        static BaseTokenType type_of(unsigned char c);
 
     private:
-        size_t pos = 0;
-        std::string src;
+        size_t m_Positition = 0;
+        std::string m_Source;
 
         TokenType get_number(size_t& pos);
         TokenType get_identifier(size_t& pos);
