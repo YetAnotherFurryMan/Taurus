@@ -39,41 +39,37 @@ namespace trs::lexer{
                 return {type: TokenType::TT_EMPTY};
         }
 
-        // Operator-case
-        /*
-            TODO:
-            - separate math operators
-            - separate logical operators
-            - separate '-', '!' and '~' operators
-            - separate assignment operators
-            - add 2-char operators ('++', '--', '&&', '||', '==', '!=', '>=', '<=')
-        */
-        std::array<char, 23> operators = {
-            '+', '-', '*', '/', '%', '&', '|', '^', '!', '~', '(', ')', ':', '=', '<', '>', '?', ',', '.', '[', ']', '{', '}'
-        };
-
-        for(char c: operators){
-            if(c == value[0]){
+        switch(value[0]){
+            // Separator-case
+            case '\n':
                 this->m_Positition++;
-                return {value: value.substr(0, 1), type: TokenType::TT_OPERATOR};
-            }
-        }
-
-        // Separator-case
-        if(value[0] == '\n' || value[0] == ';'){
-            this->m_Positition++;
-            return {type: TokenType::TT_SEPARATOR};
-        }
-
-        // Number-case, identifier-case and error-case
-        if(value[0] >= '0' && value[0] <= '9'){
-            type = get_number(pos);
-        } else if(value[0] == '_' || (value[0] >= 'A' && value[0] <= 'Z') || (value[0] >= 'a' && value[0] <= 'z')){
-            type = get_identifier(pos);
-        } else{
-            // TODO: Lexer error!!!
-            this->m_Positition++;
-            return {type: TokenType::TT_ERROR};
+                return {type: TokenType::TT_SEPARATOR};
+            case ';':
+                this->m_Positition++;
+                return {type: TokenType::TT_SEPARATOR_HARD};
+            // Number-case
+            case '0' ... '9':
+                type = get_number(pos);
+                break;
+            // Identifier-case
+            case '_':
+            case 'A' ... 'Z':
+            case 'a' ... 'z':
+                type = get_identifier(pos);
+                break;
+            // String-case
+            case '\"':
+                //TODO: String-case!!!
+                return {type: TokenType::TT_ERROR};
+            // Char-case
+            case '\'':
+                //TODO: Char-case!!!
+                return {type: TokenType::TT_ERROR};
+            // Operator-case
+            default:
+                type = get_operator(pos);
+                this->m_Positition += pos;
+                return {type: type};
         }
 
         //Update global position
@@ -117,10 +113,9 @@ namespace trs::lexer{
                 get_id = 3;
                 pos++;
                 break;
-            // Error case
+            // Single number
             default:
-                // TODO: Error case!!!
-                return TokenType::TT_ERROR;
+                return TokenType::TT_NUMBER_DEC;
         }
 
         // Validation functions
@@ -177,7 +172,8 @@ namespace trs::lexer{
             {"fsize", TokenType::TT_KW_TYPE_FSIZE},
             {"size", TokenType::TT_KW_TYPE_SIZE},
             {"char", TokenType::TT_KW_TYPE_CHAR},
-            {"str", TokenType::TT_KW_TYPE_STR}
+            {"str", TokenType::TT_KW_TYPE_STR},
+            {"bool", TokenType::TT_KW_TYPE_BOOL}
         };
 
         value = value.substr(0, pos);
@@ -186,5 +182,122 @@ namespace trs::lexer{
             return keywords[value];
         
         return TokenType::TT_IDENTIFIER;
+    }
+
+    TokenType Lexer::get_operator(size_t& pos){
+        std::string_view value = this->m_Source;
+        value = value.substr(this->m_Positition);
+
+        pos = 1;
+
+        TokenType type = TokenType::TT_EMPTY;
+
+        switch(value[0]){
+            // Brackets
+            case '(':
+                return TokenType::TT_OP_ROUND_BRACKET_L;
+            case ')':
+                return TokenType::TT_OP_ROUND_BRACKET_R;
+            case '[':
+                return TokenType::TT_OP_SQUARE_BRACKET_L;
+            case ']':
+                return TokenType::TT_OP_SQUARE_BRACKET_R;
+            case '{':
+                return TokenType::TT_OP_CURLY_BRACKET_L;
+            case '}':
+                return TokenType::TT_OP_CURLY_BRACKET_R;
+            // Can make logic operator (>= <=)
+            case '<':
+                type =  TokenType::TT_OP_ANGLE_BRACKET_L;
+                break;
+            case '>':
+                type = TokenType::TT_OP_ANGLE_BRACKET_R;
+                break;
+            // Colon
+            case ':':
+                return TokenType::TT_OP_COLON;
+            // Marks
+            case '?':
+                return TokenType::TT_OP_QUESTION_MARK;
+            // Can make logic operator (!=)
+            case '!':
+                type =  TokenType::TT_OP_EXCLAMATION_MARK;
+                break;
+            // Math, can make equality operator
+            case '+':
+                type = TokenType::TT_OP_MATH_ADD;
+                break;
+            case '-':
+                type = TokenType::TT_OP_MATH_SUB;
+                break;
+            case '*':
+                type = TokenType::TT_OP_MATH_MUL;
+                break;
+            case '/':
+                type = TokenType::TT_OP_MATH_DIV;
+                break;
+            case '%':
+                type = TokenType::TT_OP_MATH_MOD;
+                break;
+            // Binary
+            case '~':
+                return TokenType::TT_OP_MATH_BIN_NOT;
+            // Can make equality operator or/and logical operator
+            case '&':
+                type = TokenType::TT_OP_MATH_BIN_AND;
+                break;
+            case '|':
+                type = TokenType::TT_OP_MATH_BIN_OR;
+                break;
+            case '^':
+                type = TokenType::TT_OP_MATH_BIN_XOR;
+                break;
+            // Equalizer, can make logic operator (==)
+            case '=':
+                type = TokenType::TT_OP_EQUALITY;
+                break;
+            // Unknown character
+            default:
+                return TokenType::TT_ERROR;
+        }
+
+        if(value.length() == 1)
+            return type;
+
+        // 2-chars operators
+        switch(value[1]){
+            case '=':
+                type = (TokenType)(((int)type) + 1);
+                break;
+            case '+':
+                if(type == TokenType::TT_OP_MATH_ADD)
+                    type = TokenType::TT_OP_MATH_INC;
+                else
+                    return type;
+                break;
+            case '-':
+                if(type == TokenType::TT_OP_MATH_SUB)
+                    type = TokenType::TT_OP_MATH_DEC;
+                else
+                    return type;
+                break;
+            case '&':
+                if(type == TokenType::TT_OP_MATH_BIN_AND)
+                    type = TokenType::TT_OP_LOGIC_AND_AND;
+                else
+                    return type;
+                break;
+            case '|':
+                if(type == TokenType::TT_OP_MATH_BIN_OR)
+                    type = TokenType::TT_OP_LOGIC_OR_OR;
+                else
+                    return type;
+                break;
+            default:
+                return type;
+        }
+
+        pos++;
+        return type;
     }
 }
