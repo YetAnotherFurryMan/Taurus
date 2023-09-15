@@ -34,9 +34,20 @@ namespace trs::lexer{
             value = value.substr(pos);
             this->m_Positition += pos;
             pos = 0;
+
+            if(value.empty())
+                return {type: TokenType::TT_EMPTY};
         }
 
         // Operator-case
+        /*
+            TODO:
+            - separate math operators
+            - separate logical operators
+            - separate '-', '!' and '~' operators
+            - separate assignment operators
+            - add 2-char operators ('++', '--', '&&', '||', '==', '!=', '>=', '<=')
+        */
         std::array<char, 23> operators = {
             '+', '-', '*', '/', '%', '&', '|', '^', '!', '~', '(', ')', ':', '=', '<', '>', '?', ',', '.', '[', ']', '{', '}'
         };
@@ -62,7 +73,7 @@ namespace trs::lexer{
         } else{
             // TODO: Lexer error!!!
             this->m_Positition++;
-            return {type: TokenType::TT_EMPTY};
+            return {type: TokenType::TT_ERROR};
         }
 
         //Update global position
@@ -91,7 +102,7 @@ namespace trs::lexer{
         }
         
         switch(value[1]){
-            // Decimal number
+            // Decimal or octal number
             case '0' ... '9':
                 break;
             // Hexadecimal number (skipp x) (e.g. 0xa = 10)
@@ -109,7 +120,7 @@ namespace trs::lexer{
             // Error case
             default:
                 // TODO: Error case!!!
-                return TokenType::TT_EMPTY;
+                return TokenType::TT_ERROR;
         }
 
         // Validation functions
@@ -121,8 +132,13 @@ namespace trs::lexer{
             [](char c){ return c == '0' || c == '1'; }
         };
 
+        //Validate if next is needed and is correct
+        if(get_id > 0){
+            if(pos >= value.length() || !get[get_id](value[pos]))
+                return TokenType::TT_ERROR;
+        }
+
         // Move position to last valid character
-        pos++;
         while(pos < value.length() && get[get_id](value[pos]))
             pos++;
 

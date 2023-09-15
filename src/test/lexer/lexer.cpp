@@ -55,7 +55,7 @@ void print_tokens(trs::lexer::Lexer& lexer, std::string& text){
             std::cout << "=\"" << token.value.value_or("") << "\"";
         
         std::cout << "]" << std::endl;
-    } while(token.type != trs::lexer::TokenType::TT_EMPTY);
+    } while(token.type != trs::lexer::TokenType::TT_EMPTY && token.type != trs::lexer::TokenType::TT_ERROR);
 }
 
 int main(int argc, char** argv){

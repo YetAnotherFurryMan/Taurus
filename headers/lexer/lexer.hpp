@@ -6,6 +6,7 @@
 
 namespace trs::lexer{
     enum class TokenType{
+        TT_ERROR = -1,
         TT_EMPTY = 0,
         TT_IDENTIFIER,
         TT_STRING,

@@ -1,5 +1,5 @@
 scripts
 commit.txt
 bin
-test
+test/*
 .vscode
