@@ -1,4 +1,4 @@
-#include <lexer/lexer.hpp>
+#include <core/lexer.hpp>
 
 #include <array>
 #include <unordered_map>
@@ -46,7 +46,7 @@ namespace trs::lexer{
                 return {type: TokenType::TT_SEPARATOR};
             case ';':
                 this->m_Positition++;
-                return {type: TokenType::TT_SEPARATOR_HARD};
+                return {type: TokenType::TT_OP_SEMICOLON};
             // Number-case
             case '0' ... '9':
                 type = get_number(pos);
@@ -67,8 +67,8 @@ namespace trs::lexer{
                 return {type: TokenType::TT_ERROR};
             // Operator-case
             default:
-                type = get_operator(pos);
-                this->m_Positition += pos;
+                type = get_operator();
+                this->m_Positition++;
                 return {type: type};
         }
 
@@ -184,120 +184,45 @@ namespace trs::lexer{
         return TokenType::TT_IDENTIFIER;
     }
 
-    TokenType Lexer::get_operator(size_t& pos){
+    TokenType Lexer::get_operator(){
         std::string_view value = this->m_Source;
         value = value.substr(this->m_Positition);
 
-        pos = 1;
-
-        TokenType type = TokenType::TT_EMPTY;
+        #define CASE_TOKEN(val, token) case val: return TokenType::TT_##token;
 
         switch(value[0]){
             // Brackets
-            case '(':
-                return TokenType::TT_OP_ROUND_BRACKET_L;
-            case ')':
-                return TokenType::TT_OP_ROUND_BRACKET_R;
-            case '[':
-                return TokenType::TT_OP_SQUARE_BRACKET_L;
-            case ']':
-                return TokenType::TT_OP_SQUARE_BRACKET_R;
-            case '{':
-                return TokenType::TT_OP_CURLY_BRACKET_L;
-            case '}':
-                return TokenType::TT_OP_CURLY_BRACKET_R;
-            // Can make logic operator (>= <=)
-            case '<':
-                type =  TokenType::TT_OP_ANGLE_BRACKET_L;
-                break;
-            case '>':
-                type = TokenType::TT_OP_ANGLE_BRACKET_R;
-                break;
+            CASE_TOKEN('(', OP_ROUND_BRACKET_L)
+            CASE_TOKEN(')', OP_ROUND_BRACKET_R)
+            CASE_TOKEN('[', OP_SQUARE_BRACKET_L)
+            CASE_TOKEN(']', OP_SQUARE_BRACKET_R)
+            CASE_TOKEN('{', OP_CURLY_BRACKET_L)
+            CASE_TOKEN('}', OP_CURLY_BRACKET_R)
+            CASE_TOKEN('<', OP_ANGLE_BRACKET_L)
+            CASE_TOKEN('>', OP_ANGLE_BRACKET_R)
             // Colon
-            case ':':
-                return TokenType::TT_OP_COLON;
+            CASE_TOKEN(':', OP_COLON)
+            CASE_TOKEN(';', OP_SEMICOLON)
             // Marks
-            case '?':
-                return TokenType::TT_OP_QUESTION_MARK;
-            // Can make logic operator (!=)
-            case '!':
-                type =  TokenType::TT_OP_EXCLAMATION_MARK;
-                break;
-            // Math, can make equality operator
-            case '+':
-                type = TokenType::TT_OP_MATH_ADD;
-                break;
-            case '-':
-                type = TokenType::TT_OP_MATH_SUB;
-                break;
-            case '*':
-                type = TokenType::TT_OP_MATH_MUL;
-                break;
-            case '/':
-                type = TokenType::TT_OP_MATH_DIV;
-                break;
-            case '%':
-                type = TokenType::TT_OP_MATH_MOD;
-                break;
+            CASE_TOKEN('?', OP_QUESTION_MARK)
+            CASE_TOKEN('!', OP_EXCLAMATION_MARK)
+            CASE_TOKEN('+', OP_PLUS)
+            CASE_TOKEN('-', OP_MINUS)
+            CASE_TOKEN('*', OP_STAR)
+            CASE_TOKEN('/', OP_SLASH)
+            CASE_TOKEN('%', OP_MODULO)
             // Binary
-            case '~':
-                return TokenType::TT_OP_MATH_BIN_NOT;
-            // Can make equality operator or/and logical operator
-            case '&':
-                type = TokenType::TT_OP_MATH_BIN_AND;
-                break;
-            case '|':
-                type = TokenType::TT_OP_MATH_BIN_OR;
-                break;
-            case '^':
-                type = TokenType::TT_OP_MATH_BIN_XOR;
-                break;
-            // Equalizer, can make logic operator (==)
-            case '=':
-                type = TokenType::TT_OP_EQUALITY;
-                break;
-            // Unknown character
-            default:
-                return TokenType::TT_ERROR;
+            CASE_TOKEN('~', OP_NOT)
+            CASE_TOKEN('&', OP_AND)
+            CASE_TOKEN('|', OP_OR)
+            CASE_TOKEN('^', OP_XOR)
+            // Equals
+            CASE_TOKEN('=', OP_EQUALS)
         }
 
-        if(value.length() == 1)
-            return type;
+        #undef CASE_TOKEN
 
-        // 2-chars operators
-        switch(value[1]){
-            case '=':
-                type = (TokenType)(((int)type) + 1);
-                break;
-            case '+':
-                if(type == TokenType::TT_OP_MATH_ADD)
-                    type = TokenType::TT_OP_MATH_INC;
-                else
-                    return type;
-                break;
-            case '-':
-                if(type == TokenType::TT_OP_MATH_SUB)
-                    type = TokenType::TT_OP_MATH_DEC;
-                else
-                    return type;
-                break;
-            case '&':
-                if(type == TokenType::TT_OP_MATH_BIN_AND)
-                    type = TokenType::TT_OP_LOGIC_AND_AND;
-                else
-                    return type;
-                break;
-            case '|':
-                if(type == TokenType::TT_OP_MATH_BIN_OR)
-                    type = TokenType::TT_OP_LOGIC_OR_OR;
-                else
-                    return type;
-                break;
-            default:
-                return type;
-        }
-
-        pos++;
-        return type;
+        // Unknown character
+        return TokenType::TT_ERROR;
     }
 }
