@@ -1,5 +1,7 @@
 scripts
 commit.txt
 bin
-test/*
 .vscode
+export
+build
+makefile

@@ -1,0 +1,19 @@
+cmake_minimum_required(VERSION 3.7)
+
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+add_library(TRSCore STATIC
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/lexer.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/parser.cpp"
+)
+
+install(TARGETS TRSCore
+    EXPORT TRSCoreConfig
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/TRSCore)
+install(EXPORT TRSCoreConfig DESTINATION share/TRSCore/cmake)
+
+export(TARGETS TRSCore FILE TRSCoreConfig.cmake)
