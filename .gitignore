@@ -1,8 +1,5 @@
-scripts
 commit.txt
-bin
-.vscode
-export
-build
+scripts
 makefile
 *.a
+bin
