@@ -5,7 +5,7 @@
 
 #include <cctype>
 
-namespace trs::lexer{
+namespace trs::core{
     void Lexer::set_source(const std::string& src){
         this->m_Source = src;
         reset();
@@ -20,14 +20,14 @@ namespace trs::lexer{
         value = value.substr(this->m_Positition);
 
         if(value.empty())
-            return {type: TokenType::TT_EMPTY};
+            return {TokenType::TT_EMPTY};
 
         char ch = 0;
         size_t pos = 0;
         TokenType type = TokenType::TT_EMPTY;
 
         // Skipp white characters
-        while(pos < value.length() && (value[pos] == ' ' || value[pos] == '\t'))
+        while(pos < value.length() && std::isspace(value[pos]) && value[pos] != '\n')
             pos++;
 
         if(pos > 0){
@@ -36,17 +36,16 @@ namespace trs::lexer{
             pos = 0;
 
             if(value.empty())
-                return {type: TokenType::TT_EMPTY};
+                return {TokenType::TT_EMPTY};
         }
 
         switch(value[0]){
             // Separator-case
             case '\n':
-                this->m_Positition++;
-                return {type: TokenType::TT_SEPARATOR};
             case ';':
-                this->m_Positition++;
-                return {type: TokenType::TT_OP_SEMICOLON};
+                pos++;
+                type = TokenType::TT_SEPARATOR;
+                break;
             // Number-case
             case '0' ... '9':
                 type = get_number(pos);
@@ -56,26 +55,54 @@ namespace trs::lexer{
             case 'A' ... 'Z':
             case 'a' ... 'z':
                 type = get_identifier(pos);
+                if(type != TokenType::TT_IDENTIFIER){
+                    this->m_Positition += pos;
+                    return {type};
+                }
                 break;
             // String-case
             case '\"':
                 //TODO: String-case!!!
-                return {type: TokenType::TT_ERROR};
+                return {TokenType::TT_ERROR};
             // Char-case
             case '\'':
                 //TODO: Char-case!!!
-                return {type: TokenType::TT_ERROR};
+                return {TokenType::TT_ERROR};
             // Operator-case
+            case '(':
+            case ')':
+            case '[':
+            case ']':
+            case '{':
+            case '}':
+            case '<':
+            case '>':
+            case ':':
+            case '?':
+            case '!':
+            case '+':
+            case '-':
+            case '*':
+            case '/':
+            case '%':
+            case '~':
+            case '&':
+            case '|':
+            case '^':
+            case '=':
+                pos++;
+                type = TokenType::TT_OPERATOR;
+                break;
             default:
-                type = get_operator();
-                this->m_Positition++;
-                return {type: type};
+                pos++;
+                type = TokenType::TT_ERROR;
+                break;
         }
 
         //Update global position
         this->m_Positition += pos;
 
-        return {value: value.substr(0, pos), type: type};
+        return {type, value.substr(0, pos)};
     }
 
     TokenType Lexer::get_number(size_t& pos){
@@ -182,47 +209,5 @@ namespace trs::lexer{
             return keywords[value];
         
         return TokenType::TT_IDENTIFIER;
-    }
-
-    TokenType Lexer::get_operator(){
-        std::string_view value = this->m_Source;
-        value = value.substr(this->m_Positition);
-
-        #define CASE_TOKEN(val, token) case val: return TokenType::TT_##token;
-
-        switch(value[0]){
-            // Brackets
-            CASE_TOKEN('(', OP_ROUND_BRACKET_L)
-            CASE_TOKEN(')', OP_ROUND_BRACKET_R)
-            CASE_TOKEN('[', OP_SQUARE_BRACKET_L)
-            CASE_TOKEN(']', OP_SQUARE_BRACKET_R)
-            CASE_TOKEN('{', OP_CURLY_BRACKET_L)
-            CASE_TOKEN('}', OP_CURLY_BRACKET_R)
-            CASE_TOKEN('<', OP_ANGLE_BRACKET_L)
-            CASE_TOKEN('>', OP_ANGLE_BRACKET_R)
-            // Colon
-            CASE_TOKEN(':', OP_COLON)
-            CASE_TOKEN(';', OP_SEMICOLON)
-            // Marks
-            CASE_TOKEN('?', OP_QUESTION_MARK)
-            CASE_TOKEN('!', OP_EXCLAMATION_MARK)
-            CASE_TOKEN('+', OP_PLUS)
-            CASE_TOKEN('-', OP_MINUS)
-            CASE_TOKEN('*', OP_STAR)
-            CASE_TOKEN('/', OP_SLASH)
-            CASE_TOKEN('%', OP_MODULO)
-            // Binary
-            CASE_TOKEN('~', OP_NOT)
-            CASE_TOKEN('&', OP_AND)
-            CASE_TOKEN('|', OP_OR)
-            CASE_TOKEN('^', OP_XOR)
-            // Equals
-            CASE_TOKEN('=', OP_EQUALS)
-        }
-
-        #undef CASE_TOKEN
-
-        // Unknown character
-        return TokenType::TT_ERROR;
     }
 }

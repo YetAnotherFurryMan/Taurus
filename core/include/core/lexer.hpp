@@ -4,7 +4,8 @@
 #include <optional>
 #include <string_view>
 
-namespace trs::lexer{
+namespace trs::core{
+    //This enum represents lexical token type
     enum class TokenType{
         TT_ERROR = -1,
         TT_EMPTY = 0,
@@ -19,28 +20,7 @@ namespace trs::lexer{
         TT_CHAR,
         TT_WHITE,
         TT_SEPARATOR,
-        TT_OP_ROUND_BRACKET_L,
-        TT_OP_ROUND_BRACKET_R,
-        TT_OP_SQUARE_BRACKET_L,
-        TT_OP_SQUARE_BRACKET_R,
-        TT_OP_CURLY_BRACKET_L,
-        TT_OP_CURLY_BRACKET_R,
-        TT_OP_ANGLE_BRACKET_L,
-        TT_OP_ANGLE_BRACKET_R,
-        TT_OP_COLON,
-        TT_OP_SEMICOLON,
-        TT_OP_QUESTION_MARK,
-        TT_OP_EXCLAMATION_MARK,
-        TT_OP_PLUS,
-        TT_OP_MINUS,
-        TT_OP_STAR,
-        TT_OP_SLASH,
-        TT_OP_MODULO,
-        TT_OP_AND,
-        TT_OP_OR,
-        TT_OP_XOR,
-        TT_OP_NOT,
-        TT_OP_EQUALS,
+        TT_OPERATOR,
         TT_KW_VAR,
         TT_KW_CONST,
         TT_KW_TYPE_U8,
@@ -64,15 +44,27 @@ namespace trs::lexer{
         TT_KW_TYPE_BOOL
     };
 
+    //This class represents one lexical token
     struct Token{
-        std::optional<std::string_view> value;
-        TokenType type = TokenType::TT_EMPTY;
+        TokenType m_Type = TokenType::TT_EMPTY;
+        std::optional<std::string_view> m_Value;
+
+        //Returns true if this equals t (both m_Type and m_Value)
+        inline bool operator==(const Token& t){
+            return (t.m_Type == m_Type) && (t.m_Value.value_or("") == m_Value.value_or(""));
+        }
     };
 
+    //The Lexer class
     class Lexer{
     public:
+        //Sets source for the lexer
         void set_source(const std::string& src);
+        
+        //Resets position in source
         void reset();
+
+        //Returns next token
         Token next();
 
     private:
@@ -81,6 +73,5 @@ namespace trs::lexer{
 
         TokenType get_number(size_t& pos);
         TokenType get_identifier(size_t& pos);
-        TokenType get_operator();
     };
 }

@@ -1,9 +1,300 @@
 #include <core/lexer.hpp>
 
 #include <iostream>
+#include <vector>
 
-std::string token_to_string(trs::lexer::TokenType t){
-#define TT_CASE(x) case trs::lexer::TokenType::TT_##x: return #x;
+std::vector<std::pair<std::string, std::vector<trs::core::Token>>> testware = {
+    {
+        "var name: u64 = 10", 
+        {
+            {trs::core::TokenType::TT_KW_VAR},
+            {trs::core::TokenType::TT_IDENTIFIER, "name"},
+            {trs::core::TokenType::TT_OPERATOR, ":"},
+            {trs::core::TokenType::TT_KW_TYPE_U64},
+            {trs::core::TokenType::TT_OPERATOR, "="},
+            {trs::core::TokenType::TT_NUMBER_DEC, "10"},
+            {trs::core::TokenType::TT_EMPTY}
+        }
+    },
+    {
+        "var name: u32 = 012", 
+        {
+            {trs::core::TokenType::TT_KW_VAR},
+            {trs::core::TokenType::TT_IDENTIFIER, "name"},
+            {trs::core::TokenType::TT_OPERATOR, ":"},
+            {trs::core::TokenType::TT_KW_TYPE_U32},
+            {trs::core::TokenType::TT_OPERATOR, "="},
+            {trs::core::TokenType::TT_NUMBER_OCT, "012"},
+            {trs::core::TokenType::TT_EMPTY}
+        }
+    },
+    {
+        "const name: u16 = 0xa", 
+        {
+            {trs::core::TokenType::TT_KW_CONST},
+            {trs::core::TokenType::TT_IDENTIFIER, "name"},
+            {trs::core::TokenType::TT_OPERATOR, ":"},
+            {trs::core::TokenType::TT_KW_TYPE_U16},
+            {trs::core::TokenType::TT_OPERATOR, "="},
+            {trs::core::TokenType::TT_NUMBER_HEX, "0xa"},
+            {trs::core::TokenType::TT_EMPTY}
+        }
+    },
+    {
+        "const name: u8 = 0b1010", 
+        {
+            {trs::core::TokenType::TT_KW_CONST},
+            {trs::core::TokenType::TT_IDENTIFIER, "name"},
+            {trs::core::TokenType::TT_OPERATOR, ":"},
+            {trs::core::TokenType::TT_KW_TYPE_U8},
+            {trs::core::TokenType::TT_OPERATOR, "="},
+            {trs::core::TokenType::TT_NUMBER_BIN, "0b1010"},
+            {trs::core::TokenType::TT_EMPTY}
+        }
+    },
+    {
+        "var a: u64 = 10;var b: u32 = 012;", 
+        {
+            {trs::core::TokenType::TT_KW_VAR},
+            {trs::core::TokenType::TT_IDENTIFIER, "a"},
+            {trs::core::TokenType::TT_OPERATOR, ":"},
+            {trs::core::TokenType::TT_KW_TYPE_U64},
+            {trs::core::TokenType::TT_OPERATOR, "="},
+            {trs::core::TokenType::TT_NUMBER_DEC, "10"},
+            {trs::core::TokenType::TT_SEPARATOR, ";"},
+            {trs::core::TokenType::TT_KW_VAR},
+            {trs::core::TokenType::TT_IDENTIFIER, "b"},
+            {trs::core::TokenType::TT_OPERATOR, ":"},
+            {trs::core::TokenType::TT_KW_TYPE_U32},
+            {trs::core::TokenType::TT_OPERATOR, "="},
+            {trs::core::TokenType::TT_NUMBER_OCT, "012"},
+            {trs::core::TokenType::TT_SEPARATOR, ";"},
+            {trs::core::TokenType::TT_EMPTY}
+        }
+    },
+    {
+        "const c: u16 = 0xa;const d: u8 = 0b1010;", 
+        {
+            {trs::core::TokenType::TT_KW_CONST},
+            {trs::core::TokenType::TT_IDENTIFIER, "c"},
+            {trs::core::TokenType::TT_OPERATOR, ":"},
+            {trs::core::TokenType::TT_KW_TYPE_U16},
+            {trs::core::TokenType::TT_OPERATOR, "="},
+            {trs::core::TokenType::TT_NUMBER_HEX, "0xa"},
+            {trs::core::TokenType::TT_SEPARATOR, ";"},
+            {trs::core::TokenType::TT_KW_CONST},
+            {trs::core::TokenType::TT_IDENTIFIER, "d"},
+            {trs::core::TokenType::TT_OPERATOR, ":"},
+            {trs::core::TokenType::TT_KW_TYPE_U8},
+            {trs::core::TokenType::TT_OPERATOR, "="},
+            {trs::core::TokenType::TT_NUMBER_BIN, "0b1010"},
+            {trs::core::TokenType::TT_SEPARATOR, ";"},
+            {trs::core::TokenType::TT_EMPTY}
+        }
+    },
+    {
+        "var a: u64 = 10\nvar b: u32 = 012\n", 
+        {
+            {trs::core::TokenType::TT_KW_VAR},
+            {trs::core::TokenType::TT_IDENTIFIER, "a"},
+            {trs::core::TokenType::TT_OPERATOR, ":"},
+            {trs::core::TokenType::TT_KW_TYPE_U64},
+            {trs::core::TokenType::TT_OPERATOR, "="},
+            {trs::core::TokenType::TT_NUMBER_DEC, "10"},
+            {trs::core::TokenType::TT_SEPARATOR, "\n"},
+            {trs::core::TokenType::TT_KW_VAR},
+            {trs::core::TokenType::TT_IDENTIFIER, "b"},
+            {trs::core::TokenType::TT_OPERATOR, ":"},
+            {trs::core::TokenType::TT_KW_TYPE_U32},
+            {trs::core::TokenType::TT_OPERATOR, "="},
+            {trs::core::TokenType::TT_NUMBER_OCT, "012"},
+            {trs::core::TokenType::TT_SEPARATOR, "\n"},
+            {trs::core::TokenType::TT_EMPTY}
+        }
+    },
+    {
+        "const c: u16 = 0xa\nconst d: u8 = 0b1010\n", 
+        {
+            {trs::core::TokenType::TT_KW_CONST},
+            {trs::core::TokenType::TT_IDENTIFIER, "c"},
+            {trs::core::TokenType::TT_OPERATOR, ":"},
+            {trs::core::TokenType::TT_KW_TYPE_U16},
+            {trs::core::TokenType::TT_OPERATOR, "="},
+            {trs::core::TokenType::TT_NUMBER_HEX, "0xa"},
+            {trs::core::TokenType::TT_SEPARATOR, "\n"},
+            {trs::core::TokenType::TT_KW_CONST},
+            {trs::core::TokenType::TT_IDENTIFIER, "d"},
+            {trs::core::TokenType::TT_OPERATOR, ":"},
+            {trs::core::TokenType::TT_KW_TYPE_U8},
+            {trs::core::TokenType::TT_OPERATOR, "="},
+            {trs::core::TokenType::TT_NUMBER_BIN, "0b1010"},
+            {trs::core::TokenType::TT_SEPARATOR, "\n"},
+            {trs::core::TokenType::TT_EMPTY}
+        }
+    },
+    {
+        "var math: bool = a == b && (c >= d || e != f || g <= h) && (i > j || k < l)", 
+        {
+            {trs::core::TokenType::TT_KW_VAR},
+            {trs::core::TokenType::TT_IDENTIFIER, "math"},
+            {trs::core::TokenType::TT_OPERATOR, ":"},
+            {trs::core::TokenType::TT_KW_TYPE_BOOL},
+            {trs::core::TokenType::TT_OPERATOR, "="},
+            {trs::core::TokenType::TT_IDENTIFIER, "a"},
+            {trs::core::TokenType::TT_OPERATOR, "="},
+            {trs::core::TokenType::TT_OPERATOR, "="},
+            {trs::core::TokenType::TT_IDENTIFIER, "b"},
+            {trs::core::TokenType::TT_OPERATOR, "&"},
+            {trs::core::TokenType::TT_OPERATOR, "&"},
+            {trs::core::TokenType::TT_OPERATOR, "("},
+            {trs::core::TokenType::TT_IDENTIFIER, "c"},
+            {trs::core::TokenType::TT_OPERATOR, ">"},
+            {trs::core::TokenType::TT_OPERATOR, "="},
+            {trs::core::TokenType::TT_IDENTIFIER, "d"},
+            {trs::core::TokenType::TT_OPERATOR, "|"},
+            {trs::core::TokenType::TT_OPERATOR, "|"},
+            {trs::core::TokenType::TT_IDENTIFIER, "e"},
+            {trs::core::TokenType::TT_OPERATOR, "!"},
+            {trs::core::TokenType::TT_OPERATOR, "="},
+            {trs::core::TokenType::TT_IDENTIFIER, "f"},
+            {trs::core::TokenType::TT_OPERATOR, "|"},
+            {trs::core::TokenType::TT_OPERATOR, "|"},
+            {trs::core::TokenType::TT_IDENTIFIER, "g"},
+            {trs::core::TokenType::TT_OPERATOR, "<"},
+            {trs::core::TokenType::TT_OPERATOR, "="},
+            {trs::core::TokenType::TT_IDENTIFIER, "h"},
+            {trs::core::TokenType::TT_OPERATOR, ")"},
+            {trs::core::TokenType::TT_OPERATOR, "&"},
+            {trs::core::TokenType::TT_OPERATOR, "&"},
+            {trs::core::TokenType::TT_OPERATOR, "("},
+            {trs::core::TokenType::TT_IDENTIFIER, "i"},
+            {trs::core::TokenType::TT_OPERATOR, ">"},
+            {trs::core::TokenType::TT_IDENTIFIER, "j"},
+            {trs::core::TokenType::TT_OPERATOR, "|"},
+            {trs::core::TokenType::TT_OPERATOR, "|"},
+            {trs::core::TokenType::TT_IDENTIFIER, "k"},
+            {trs::core::TokenType::TT_OPERATOR, "<"},
+            {trs::core::TokenType::TT_IDENTIFIER, "l"},
+            {trs::core::TokenType::TT_OPERATOR, ")"},
+            {trs::core::TokenType::TT_EMPTY}
+        }
+    },
+    {
+        "a++; a--;", 
+        {
+            {trs::core::TokenType::TT_IDENTIFIER, "a"},
+            {trs::core::TokenType::TT_OPERATOR, "+"},
+            {trs::core::TokenType::TT_OPERATOR, "+"},
+            {trs::core::TokenType::TT_SEPARATOR, ";"},
+            {trs::core::TokenType::TT_IDENTIFIER, "a"},
+            {trs::core::TokenType::TT_OPERATOR, "-"},
+            {trs::core::TokenType::TT_OPERATOR, "-"},
+            {trs::core::TokenType::TT_SEPARATOR, ";"},
+            {trs::core::TokenType::TT_EMPTY}
+        }
+    },
+    {
+        "a += b + c; a -= d - c\n a *= e * c; a /= f / c\n a %= g % c", 
+        {
+            {trs::core::TokenType::TT_IDENTIFIER, "a"},
+            {trs::core::TokenType::TT_OPERATOR, "+"},
+            {trs::core::TokenType::TT_OPERATOR, "="},
+            {trs::core::TokenType::TT_IDENTIFIER, "b"},
+            {trs::core::TokenType::TT_OPERATOR, "+"},
+            {trs::core::TokenType::TT_IDENTIFIER, "c"},
+            {trs::core::TokenType::TT_SEPARATOR, ";"},
+            {trs::core::TokenType::TT_IDENTIFIER, "a"},
+            {trs::core::TokenType::TT_OPERATOR, "-"},
+            {trs::core::TokenType::TT_OPERATOR, "="},
+            {trs::core::TokenType::TT_IDENTIFIER, "d"},
+            {trs::core::TokenType::TT_OPERATOR, "-"},
+            {trs::core::TokenType::TT_IDENTIFIER, "c"},
+            {trs::core::TokenType::TT_SEPARATOR, "\n"},
+            {trs::core::TokenType::TT_IDENTIFIER, "a"},
+            {trs::core::TokenType::TT_OPERATOR, "*"},
+            {trs::core::TokenType::TT_OPERATOR, "="},
+            {trs::core::TokenType::TT_IDENTIFIER, "e"},
+            {trs::core::TokenType::TT_OPERATOR, "*"},
+            {trs::core::TokenType::TT_IDENTIFIER, "c"},
+            {trs::core::TokenType::TT_SEPARATOR, ";"},
+            {trs::core::TokenType::TT_IDENTIFIER, "a"},
+            {trs::core::TokenType::TT_OPERATOR, "/"},
+            {trs::core::TokenType::TT_OPERATOR, "="},
+            {trs::core::TokenType::TT_IDENTIFIER, "f"},
+            {trs::core::TokenType::TT_OPERATOR, "/"},
+            {trs::core::TokenType::TT_IDENTIFIER, "c"},
+            {trs::core::TokenType::TT_SEPARATOR, "\n"},
+            {trs::core::TokenType::TT_IDENTIFIER, "a"},
+            {trs::core::TokenType::TT_OPERATOR, "%"},
+            {trs::core::TokenType::TT_OPERATOR, "="},
+            {trs::core::TokenType::TT_IDENTIFIER, "g"},
+            {trs::core::TokenType::TT_OPERATOR, "%"},
+            {trs::core::TokenType::TT_IDENTIFIER, "c"},
+            {trs::core::TokenType::TT_EMPTY}
+        }
+    },
+    {
+        "a[0] = ~a[1]", 
+        {
+            {trs::core::TokenType::TT_IDENTIFIER, "a"},
+            {trs::core::TokenType::TT_OPERATOR, "["},
+            {trs::core::TokenType::TT_NUMBER_DEC, "0"},
+            {trs::core::TokenType::TT_OPERATOR, "]"},
+            {trs::core::TokenType::TT_OPERATOR, "="},
+            {trs::core::TokenType::TT_OPERATOR, "~"},
+            {trs::core::TokenType::TT_IDENTIFIER, "a"},
+            {trs::core::TokenType::TT_OPERATOR, "["},
+            {trs::core::TokenType::TT_NUMBER_DEC, "1"},
+            {trs::core::TokenType::TT_OPERATOR, "]"},
+            {trs::core::TokenType::TT_EMPTY}
+        }
+    },
+    {
+        "a &= b & c; a |= d | c\n a ^= e ^ c", 
+        {
+            {trs::core::TokenType::TT_IDENTIFIER, "a"},
+            {trs::core::TokenType::TT_OPERATOR, "&"},
+            {trs::core::TokenType::TT_OPERATOR, "="},
+            {trs::core::TokenType::TT_IDENTIFIER, "b"},
+            {trs::core::TokenType::TT_OPERATOR, "&"},
+            {trs::core::TokenType::TT_IDENTIFIER, "c"},
+            {trs::core::TokenType::TT_SEPARATOR, ";"},
+            {trs::core::TokenType::TT_IDENTIFIER, "a"},
+            {trs::core::TokenType::TT_OPERATOR, "|"},
+            {trs::core::TokenType::TT_OPERATOR, "="},
+            {trs::core::TokenType::TT_IDENTIFIER, "d"},
+            {trs::core::TokenType::TT_OPERATOR, "|"},
+            {trs::core::TokenType::TT_IDENTIFIER, "c"},
+            {trs::core::TokenType::TT_SEPARATOR, "\n"},
+            {trs::core::TokenType::TT_IDENTIFIER, "a"},
+            {trs::core::TokenType::TT_OPERATOR, "^"},
+            {trs::core::TokenType::TT_OPERATOR, "="},
+            {trs::core::TokenType::TT_IDENTIFIER, "e"},
+            {trs::core::TokenType::TT_OPERATOR, "^"},
+            {trs::core::TokenType::TT_IDENTIFIER, "c"},
+            {trs::core::TokenType::TT_EMPTY}
+        }
+    },
+    {
+        "a[1] = !a[2]", 
+        {
+            {trs::core::TokenType::TT_IDENTIFIER, "a"},
+            {trs::core::TokenType::TT_OPERATOR, "["},
+            {trs::core::TokenType::TT_NUMBER_DEC, "1"},
+            {trs::core::TokenType::TT_OPERATOR, "]"},
+            {trs::core::TokenType::TT_OPERATOR, "="},
+            {trs::core::TokenType::TT_OPERATOR, "!"},
+            {trs::core::TokenType::TT_IDENTIFIER, "a"},
+            {trs::core::TokenType::TT_OPERATOR, "["},
+            {trs::core::TokenType::TT_NUMBER_DEC, "2"},
+            {trs::core::TokenType::TT_OPERATOR, "]"},
+            {trs::core::TokenType::TT_EMPTY}
+        }
+    }
+};
+
+std::string token_to_string(trs::core::TokenType t){
+#define TT_CASE(x) case trs::core::TokenType::TT_##x: return #x;
     switch(t){
         TT_CASE(EMPTY)
         TT_CASE(IDENTIFIER)
@@ -17,28 +308,7 @@ std::string token_to_string(trs::lexer::TokenType t){
         TT_CASE(CHAR)
         TT_CASE(WHITE)
         TT_CASE(SEPARATOR)
-        TT_CASE(OP_ROUND_BRACKET_L)
-        TT_CASE(OP_ROUND_BRACKET_R)
-        TT_CASE(OP_SQUARE_BRACKET_L)
-        TT_CASE(OP_SQUARE_BRACKET_R)
-        TT_CASE(OP_CURLY_BRACKET_L)
-        TT_CASE(OP_CURLY_BRACKET_R)
-        TT_CASE(OP_ANGLE_BRACKET_L)
-        TT_CASE(OP_ANGLE_BRACKET_R)
-        TT_CASE(OP_COLON)
-        TT_CASE(OP_SEMICOLON)
-        TT_CASE(OP_QUESTION_MARK)
-        TT_CASE(OP_EXCLAMATION_MARK)
-        TT_CASE(OP_NOT)
-        TT_CASE(OP_PLUS)
-        TT_CASE(OP_MINUS)
-        TT_CASE(OP_STAR)
-        TT_CASE(OP_SLASH)
-        TT_CASE(OP_MODULO)
-        TT_CASE(OP_AND)
-        TT_CASE(OP_OR)
-        TT_CASE(OP_XOR)
-        TT_CASE(OP_EQUALS)
+        TT_CASE(OPERATOR)
         TT_CASE(KW_VAR)
         TT_CASE(KW_CONST)
         TT_CASE(KW_TYPE_U8)
@@ -56,7 +326,7 @@ std::string token_to_string(trs::lexer::TokenType t){
         TT_CASE(KW_TYPE_F32)
         TT_CASE(KW_TYPE_F64)
         TT_CASE(KW_TYPE_FSIZE)
-        TT_CASE(KW_TYPE_SIZE)
+        TT_CASE(KW_TYPE_SIZE) 
         TT_CASE(KW_TYPE_CHAR)
         TT_CASE(KW_TYPE_STR)
         TT_CASE(KW_TYPE_BOOL)
@@ -65,44 +335,58 @@ std::string token_to_string(trs::lexer::TokenType t){
     return "TT_ERROR";
 }
 
-void print_tokens(trs::lexer::Lexer& lexer, std::string& text){
-    lexer.set_source(text);
-
-    trs::lexer::Token token;
+void print_tokens(trs::core::Lexer& lexer){
+    trs::core::Token token;
     do{
         token = lexer.next();
-        std::cout << "[" << token_to_string(token.type);
+        std::cout << "[" << token_to_string(token.m_Type);
 
-        if(token.value.has_value())
-            std::cout << "=\"" << token.value.value_or("") << "\"";
+        if(token.m_Value.has_value())
+            std::cout << "=\"" << token.m_Value.value_or("") << "\"";
         
         std::cout << "] ";
-    } while(token.type != trs::lexer::TokenType::TT_EMPTY && token.type != trs::lexer::TokenType::TT_ERROR);
+    } while(token.m_Type != trs::core::TokenType::TT_EMPTY && token.m_Type != trs::core::TokenType::TT_ERROR);
     std::cout << std::endl;
+}
+
+bool validate(trs::core::Lexer& lexer, const std::vector<trs::core::Token>& data){
+    trs::core::Token token;
+    size_t i = 0;
+
+    do{
+        token = lexer.next();
+
+        if(token.m_Type == trs::core::TokenType::TT_ERROR || i >= data.size())
+            return false;
+        
+        if(token != data[i])
+            return false;
+
+        i++;
+    } while(token.m_Type != trs::core::TokenType::TT_EMPTY);
+
+    return true;
 }
 
 int main(int argc, char** argv){
     std::cout << "Lexer test: " << std::endl;
-    std::string texts[] = {
-        "var name: u64 = 10",
-        "var name: u32 = 012",
-        "const name: u16 = 0xa",
-        "const name: u8 = 0b1010",
-        "var name: u64 = 10;var name: u32 = 012;",
-        "const name: u16 = 0xa;const name: u8 = 0b1010;",
-        "var name: u64 = 10\nvar name: u32 = 012\n",
-        "const name: u16 = 0xa\nconst name: u8 = 0b1010\n",
-        "var name: bool = a == b && (c >= d || e != f || g <= h) && (i > j || k < l)",
-        "a++; a--;",
-        "a += b + c; a -= d - c; a *= e * c; a /= f / c; a %= g % c",
-        "a[0] = ~a[1]",
-        "a &= b & c; a |= d | c; a ^= e ^ c",
-        "a[1] = !a[2]"
-    };
 
-    trs::lexer::Lexer lexer;
-    for(auto& text: texts)
-        print_tokens(lexer, text);
+    trs::core::Lexer lexer;
+    size_t passed = 0;
+    for(auto& e: testware){
+        lexer.set_source(e.first);
+
+        if(!validate(lexer, e.second)){
+            lexer.reset();
+            std::cout << "Failed: ";
+            print_tokens(lexer);
+            continue;
+        }
+
+        passed++;
+    }
+
+    std::cout << passed << "/" << testware.size() << std::endl;
     
     return 0;
 }
