@@ -1,5 +1,5 @@
 commit.txt
-scripts
-makefile
-*.a
-bin
+build
+build.sh
+update.sh
+push.sh
