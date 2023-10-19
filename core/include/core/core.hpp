@@ -22,13 +22,13 @@ namespace trs::core{
     };
 
     //Expression structure for literals like "1"
-    struct StaticAST: AST{
+    struct StaticAST: public AST{
         std::string_view m_Value;
         StaticType m_Type = StaticType::ST_ERROR;
     };
 
     //Expression structure for referencing a variable, like "var a" or "const a"
-    struct VariableAST: AST{
+    struct VariableAST: public AST{
         std::string_view m_Label;
         std::unique_ptr<StaticAST> m_Value;
         StaticType m_Type = StaticType::ST_ERROR;
@@ -43,7 +43,7 @@ namespace trs::core{
     };
 
     //Expression structure for a binary operator, like "a + b"
-    struct BinaryAST: AST{
+    struct BinaryAST: public AST{
         StaticOperation m_Operation;
         std::unique_ptr<AST> m_LHS;
         std::unique_ptr<AST> m_RHS;
@@ -56,7 +56,7 @@ namespace trs::core{
     };
 
     //Expression structure for function calls, like "f()"
-    struct CallAST: AST{
+    struct CallAST: public AST{
         std::string_view m_Callee;
         std::vector<std::unique_ptr<AST>> m_Arguments;
 

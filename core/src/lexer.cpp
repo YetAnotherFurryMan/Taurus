@@ -42,6 +42,7 @@ namespace trs::core{
         switch(value[0]){
             // Separator-case
             case '\n':
+                this->m_LineNumber++;
             case ';':
                 pos++;
                 type = TokenType::TT_SEPARATOR;
@@ -49,6 +50,8 @@ namespace trs::core{
             // Number-case
             case '0' ... '9':
                 type = get_number(pos);
+                if(type == TokenType::TT_ERROR)
+                    return {type, "Lexer error: Unexpected nonnumeric character."};
                 break;
             // Identifier-case
             case '_':
@@ -63,11 +66,11 @@ namespace trs::core{
             // String-case
             case '\"':
                 //TODO: String-case!!!
-                return {TokenType::TT_ERROR};
+                return {TokenType::TT_ERROR, "Lexer error: Not implemented yet."};
             // Char-case
             case '\'':
                 //TODO: Char-case!!!
-                return {TokenType::TT_ERROR};
+                return {TokenType::TT_ERROR, "Lexer error: Not implemented yet."};
             // Operator-case
             case '(':
             case ')':
@@ -94,9 +97,8 @@ namespace trs::core{
                 type = TokenType::TT_OPERATOR;
                 break;
             default:
-                pos++;
-                type = TokenType::TT_ERROR;
-                break;
+                m_Positition++;
+                return {TokenType::TT_ERROR, "Lexer error: Unrecognized character."};
         }
 
         //Update global position
@@ -182,6 +184,7 @@ namespace trs::core{
         std::unordered_map<std::string_view, TokenType> keywords = {
             {"var", TokenType::TT_KW_VAR},
             {"const", TokenType::TT_KW_CONST},
+            {"extern", TokenType::TT_KW_EXTERN},
             {"u8", TokenType::TT_KW_TYPE_U8},
             {"u16", TokenType::TT_KW_TYPE_U16},
             {"u32", TokenType::TT_KW_TYPE_U32},

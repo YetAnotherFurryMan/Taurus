@@ -23,6 +23,7 @@ namespace trs::core{
         TT_OPERATOR,
         TT_KW_VAR,
         TT_KW_CONST,
+        TT_KW_EXTERN,
         TT_KW_TYPE_U8,
         TT_KW_TYPE_U16,
         TT_KW_TYPE_U32,
@@ -53,11 +54,22 @@ namespace trs::core{
         inline bool operator==(const Token& t){
             return (t.m_Type == m_Type) && (t.m_Value.value_or("") == m_Value.value_or(""));
         }
+
+        inline bool operator!=(const Token& t){
+            return !(*this == t);
+        }
     };
 
     //The Lexer class
     class Lexer{
     public:
+        //Holds current line number (e.g. lineno)
+        size_t m_LineNumber = 0;
+
+        //Deleted constructors
+        Lexer(const Lexer&) = delete;
+        Lexer(const Lexer&&) = delete;
+
         //Sets source for the lexer
         void set_source(const std::string& src);
         
