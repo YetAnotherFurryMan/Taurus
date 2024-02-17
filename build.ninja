@@ -1,0 +1,127 @@
+ninja_required_version = 1.5
+
+builddir = build
+
+cflags = -Wall -Wextra -Wpedantic -std=c17
+cxxflags = -Wall -Wextra -Wpedantic -std=c++17
+ldflags = -Lbuild
+
+rule cc
+  depfile = $out.d
+  deps = gcc
+  command = cc $includes $cflags -c $in -MD -MT $out -MF $out.d -o $out
+  description = Building C object $out
+
+rule cpp
+  depfile = $out.d
+  deps = gcc
+  command = c++ $includes $cxxflags -c $in -MD -MT $out -MF $out.d -o $out
+  description = Building C++ object $out
+
+rule lib
+  command = ar qc $out $in
+  description = Building library $out
+
+rule exe
+  command = c++ $ldflags $libs -o $out $in
+  description = Building executable $out
+
+build build/trsap.dir/trsap.c.o: cc trsap/src/trsap.c
+  includes = -Itrsap/headers 
+
+build build/libtrsap.a: lib build/trsap.dir/trsap.c.o
+build trsap: phony build/libtrsap.a
+
+build build/trscli.dir/trscli.c.o: cc trscli/src/trscli.c
+  includes = -Itrscli/headers 
+
+build build/libtrscli.a: lib build/trscli.dir/trscli.c.o
+build trscli: phony build/libtrscli.a
+
+build build/trsre.dir/find.c.o: cc trsre/src/find.c
+  includes = -Itrsre/headers 
+
+build build/trsre.dir/get_token.c.o: cc trsre/src/get_token.c
+  includes = -Itrsre/headers 
+
+build build/trsre.dir/match.c.o: cc trsre/src/match.c
+  includes = -Itrsre/headers 
+
+build build/trsre.dir/match_char.c.o: cc trsre/src/match_char.c
+  includes = -Itrsre/headers 
+
+build build/trsre.dir/match_group.c.o: cc trsre/src/match_group.c
+  includes = -Itrsre/headers 
+
+build build/libtrsre.a: lib build/trsre.dir/find.c.o build/trsre.dir/get_token.c.o build/trsre.dir/match.c.o build/trsre.dir/match_char.c.o build/trsre.dir/match_group.c.o
+build trsre: phony build/libtrsre.a
+
+build build/trsre.dir/string.c.o: cc trsre/ext/string.c
+  includes = -Itrsre/headers 
+
+build build/libtrsre-ext.a: lib build/trsre.dir/string.c.o
+build trsre-ext: phony build/libtrsre-ext.a
+
+build build/trsrec.dir/c.cpp.o: cpp trsrec/src/c.cpp
+  includes = -Itrsrec/headers -Itrsap/headers -Itrscli/headers -Itrsre/headers -Itrsre-ext/headers 
+
+build build/trsrec.dir/log_token.cpp.o: cpp trsrec/src/log_token.cpp
+  includes = -Itrsrec/headers -Itrsap/headers -Itrscli/headers -Itrsre/headers -Itrsre-ext/headers 
+
+build build/trsrec.dir/main.cpp.o: cpp trsrec/src/main.cpp
+  includes = -Itrsrec/headers -Itrsap/headers -Itrscli/headers -Itrsre/headers -Itrsre-ext/headers 
+
+build build/trsrec.dir/program_generate_c_cpp.cpp.o: cpp trsrec/src/program_generate_c_cpp.cpp
+  includes = -Itrsrec/headers -Itrsap/headers -Itrscli/headers -Itrsre/headers -Itrsre-ext/headers 
+
+build build/trsrec.dir/program_get_lit.cpp.o: cpp trsrec/src/program_get_lit.cpp
+  includes = -Itrsrec/headers -Itrsap/headers -Itrscli/headers -Itrsre/headers -Itrsre-ext/headers 
+
+build build/trsrec.dir/program_init.cpp.o: cpp trsrec/src/program_init.cpp
+  includes = -Itrsrec/headers -Itrsap/headers -Itrscli/headers -Itrsre/headers -Itrsre-ext/headers 
+
+build build/trsrec.dir/program_load.cpp.o: cpp trsrec/src/program_load.cpp
+  includes = -Itrsrec/headers -Itrsap/headers -Itrscli/headers -Itrsre/headers -Itrsre-ext/headers 
+
+build build/trsrec.dir/program_terminate.cpp.o: cpp trsrec/src/program_terminate.cpp
+  includes = -Itrsrec/headers -Itrsap/headers -Itrscli/headers -Itrsre/headers -Itrsre-ext/headers 
+
+build build/trsrec: exe build/trsrec.dir/c.cpp.o build/trsrec.dir/log_token.cpp.o build/trsrec.dir/main.cpp.o build/trsrec.dir/program_generate_c_cpp.cpp.o build/trsrec.dir/program_get_lit.cpp.o build/trsrec.dir/program_init.cpp.o build/trsrec.dir/program_load.cpp.o build/trsrec.dir/program_terminate.cpp.o build/libtrsap.a build/libtrscli.a build/libtrsre.a build/libtrsre-ext.a
+
+build trsrec: phony build/trsrec
+
+build build/trscc.dir/main.cpp.o: cpp trscc/src/main.cpp
+  includes = -Itrscc/headers -Itrsap/headers -Itrscli/headers -Itrsre/headers 
+
+build build/trscc: exe build/trscc.dir/main.cpp.o build/libtrsap.a build/libtrscli.a build/libtrsre.a
+
+build trscc: phony build/trscc
+
+build build/trsc.dir/main.cpp.o: cpp trsc/src/main.cpp
+  includes = -Itrsc/headers -Itrsap/headers -Itrscli/headers -Itrsre/headers 
+
+build build/trsc: exe build/trsc.dir/main.cpp.o build/libtrsap.a build/libtrscli.a build/libtrsre.a
+
+build trsc: phony build/trsc
+
+build build/testware/trsre_match_char.dir/main.c.o: cc testware/trsre_match_char/main.c
+  includes = -Itrsre/headers 
+
+build build/testware/trsre_match_char.test: exe build/testware/trsre_match_char.dir/main.c.o build/libtrsre.a
+
+build trsre_match_char.test: phony build/testware/trsre_match_char.test
+
+build build/testware/trsre_match_group.dir/main.c.o: cc testware/trsre_match_group/main.c
+  includes = -Itrsre/headers 
+
+build build/testware/trsre_match_group.test: exe build/testware/trsre_match_group.dir/main.c.o build/libtrsre.a
+
+build trsre_match_group.test: phony build/testware/trsre_match_group.test
+
+build build/testware/trsre_get_token.dir/main.c.o: cc testware/trsre_get_token/main.c
+  includes = -Itrsre/headers -Itrsre-ext/headers 
+
+build build/testware/trsre_get_token.test: exe build/testware/trsre_get_token.dir/main.c.o build/libtrsre.a build/libtrsre-ext.a
+
+build trsre_get_token.test: phony build/testware/trsre_get_token.test
+
