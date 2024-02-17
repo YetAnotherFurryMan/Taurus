@@ -36,13 +36,13 @@ namespace trsrec{
 
         /*
          * {
-         *     size_t $my_label = 0;
+         *     ?expect? size_t $my_label = 0;
          *     while($?input[$iter] && $input[$iter] ?= '$c'){
-         *         $my_label++;
+         *         ?expect? $my_label++;
          *         $iter++;
          *     }
          *
-         * ?expect? if(!$my_label){
+         *     ?expect? if(!$my_label){
          *         goto $label;
          *     }
          * }
@@ -52,9 +52,15 @@ namespace trsrec{
 
             std::stringstream ss;
             ss << tabs << "{" << std::endl;
-            ss << tabs << "\tsize_t " << state.m_Prefix << "_" << state.m_ID << " = 0;" << std::endl;
+
+            if(expect)
+                ss << tabs << "\tsize_t " << state.m_Prefix << "_" << state.m_ID << " = 0;" << std::endl;
+            
             ss << tabs << "\twhile(" << state.m_Input << "[" << state.m_Iter << "] && " << state.m_Input << "[" << state.m_Iter << "] " << (neg?'!':'=') << "= \'" << c << "\'){" << std::endl;
-            ss << tabs << "\t\t" << state.m_Prefix << "_" << state.m_ID << "++;" << std::endl;
+            
+            if(expect)
+                ss << tabs << "\t\t" << state.m_Prefix << "_" << state.m_ID << "++;" << std::endl;
+            
             ss << tabs << "\t\t" << state.m_Iter << "++;" << std::endl;
             ss << tabs << "\t}" << std::endl;
             ss << std::endl; 
@@ -68,110 +74,150 @@ namespace trsrec{
             ss << tabs << "}" << std::endl;
             ss << std::endl;
 
-            state.m_ID++;
+            if(expect)
+                state.m_ID++;
 
             return ss.str();
         }
 
         /*
-         * if($input[$iter] ?= 0){
+         * if(?($my_exp)){
          *     $iter++;
-         * } else{
+         * } ?expect? else{
          *     goto $label;
          * }
          */
-        std::string expect_any(char c, bool neg, std::string_view input, std::string_view iter, std::string_view label, size_t depth){
-            std::string tabs = std::string(depth, '\t');
+        std::string get_specjal(char c, bool neg, bool expect, State& state){
+            std::string tabs = std::string(state.m_Depth, '\t');
+
+            if(neg){
+                switch(c){
+                    case '.':
+                        c = '$';
+                        break;
+                    case '$':
+                        c = '.';
+                        break;
+                }
+            }
 
             std::stringstream ss;
+            ss << tabs << "if(";
 
-            ss << tabs << "if(" << input << "[" << iter << "] " << (neg?'=':'!') << "= 0){" << std::endl;
-            ss << tabs << "\t" << iter << "++;" << std::endl;
-            ss << tabs << "} else{" << std::endl;
-            ss << tabs << "\tgoto " << label << ";" << std::endl;
-            ss << tabs << "}" << std::endl;
+            // my_exp
+            switch(c){
+                case '.':
+                    ss << state.m_Input << "[" << state.m_Iter << "]";
+                    break;
+                case '$':
+                    ss << state.m_Input << "[" << state.m_Iter << "] == 0";
+                    state.m_Label = state.m_Prefix; // There is no sense continue parsing
+                                                    // TODO !!! smthing like matches = $iter;
+                    break;
+                case 'w':
+                    // TODO Not implemented yet...
+                    break;
+                default:
+                    ss << state.m_Input << "[" << state.m_Iter << "] " << (neg?'!':'=') << "= \'\\" << std::to_string(c) << "\'";
+            }
+
+            ss << "){" << std::endl;
+            ss << tabs << "\t" << state.m_Iter << "++;" << std::endl;
+            ss << tabs << "}";
+
+            if(expect){
+                ss << " else{" << std::endl;
+                ss << tabs << "\tgoto " << state.m_Label << ";" << std::endl;
+                ss << tabs << "}";
+            }
+
+            ss << std::endl;
             ss << std::endl;
 
             return ss.str();
         }
 
         /*
-         * {   // if(neg) expect_eoe
-         *     size_t $my_label = $iter;
-         *     while($input[$my_label]){
-         *         $my_label++;
+         * {
+         *     ?expect? size_t $my_label = 0;
+         *     while($?input[$iter] && ?($my_exp)){
+         *         ?expect? $my_label++;
+         *         $iter++;
          *     }
          *
-         *     if($my_label - $iter <= 0){
+         *     ?expect? if(!$my_label){
          *         goto $label;
          *     }
          * }
          */
-        std::string expect_anys(char c, bool neg, std::string_view input, std::string_view iter, std::string_view label, size_t depth, std::string_view prefix, size_t* id){
-            return "//TODO";
-        }
+        std::string get_specjals(char c, bool neg, bool expect, State& state){
+            std::string tabs = std::string(state.m_Depth, '\t');
 
-        /*
-         * if($input[$iter] ?= 0){
-         *     $iter++;
-         * }
-         */
-        std::string get_any(char c, bool neg, std::string_view input, std::string_view iter, size_t depth){
-            return "//TODO";
-        }
+            if(neg){
+                switch(c){
+                    case '.':
+                        c = '$';
+                        break;
+                    case '$':
+                        c = '.';
+                        break;
+                }
+            }
 
-        /*
-         * // if(neg) get_eoe
-         * while($input[$iter]){
-         *     $iter++;
-         * }
-         */
-        std::string get_anys(char c, bool neg, std::string_view input, std::string_view iter, size_t depth){
-            return "//TODO";
-        }
+            if(c == '$')
+                return get_specjal('$', false, expect, state);
 
-        /*
-         * if($input[$iter] == 0){
-         *     ?$iter++;
-         * } else{
-         *     goto $label;
-         * }
-         */
-        std::string expect_eoe(bool neg, std::string_view input, std::string_view iter, std::string_view label, size_t depth){
-            return "//TODO";
-        }
+            std::stringstream ss;
+            ss << tabs << "{" << std::endl;
 
-        /*
-         * if($input[$iter] == 0){
-         *     ?$iter++;
-         * }
-         */
-        std::string get_eoe(bool neg, std::string_view input, std::string_view iter, std::string_view label, size_t depth){
-            return "//TODO";
+            if(expect)
+                ss << tabs << "\tsize_t " << state.m_Prefix << "_" << state.m_ID << " = 0;" << std::endl;
+            
+            ss << tabs << "\twhile(" << state.m_Input << "[" << state.m_Iter << "] && ";
+
+            // my_exp
+            switch(c){
+                case '.':
+                    ss << state.m_Input << "[" << state.m_Iter << "]";
+                    break;
+                case 'w':
+                    // TODO Not implemented yet...
+                    break;
+                default:
+                    ss << state.m_Input << "[" << state.m_Iter << "] " << (neg?'!':'=') << "= \'\\" << std::to_string(c) << "\'";
+            }
+
+            ss << "){" << std::endl;
+            
+            if(expect)
+                ss << tabs << "\t\t" << state.m_Prefix << "_" << state.m_ID << "++;" << std::endl;
+            
+            ss << tabs << "\t\t" << state.m_Iter << "++;" << std::endl;
+            ss << tabs << "\t}" << std::endl;
+            ss << std::endl; 
+
+            if(expect){
+                ss << tabs << "\tif(!" << state.m_Prefix << "_" << state.m_ID << "){" << std::endl;
+                ss << tabs << "\t\tgoto " << state.m_Label << ";" << std::endl;
+                ss << tabs << "\t}" << std::endl;
+            }
+            
+            ss << tabs << "}" << std::endl;
+            ss << std::endl;
+
+            if(expect)
+                state.m_ID++;
+
+            return ss.str();
         }
 
         /*
          * if(?($input[$iter] >= '$a' && $input[$iter] <= '$b')){ // !(a >= b && a <= c) = a < b || a > c
          *     $iter++;
-         * } else{
+         * } ?expect? else{
          *     goto $label;
          * }
          */
-        /*std::string expect_range(char a, char b, bool neg, std::string_view input, std::string_view iter, std::string_view label, size_t depth){
-            std::string tabs = std::string(depth, '\t');
-
-            std::stringstream ss;
-
-            ss << tabs << "if(" << input << "[" << iter << "] " << (neg?"<":">=") << " \'" << a << "\' " << (neg?"|| ":"&& ") << input << "[" << iter << "] " << (neg?">":"<=") << " \'" << b << "\'){" << std::endl;
-            ss << tabs << "\t" << iter << "++;" << std::endl;
-            ss << tabs << "} else{" << std::endl;
-            ss << tabs << "\tgoto " << label << ";" << std::endl;
-            ss << tabs << "}" << std::endl;
-            ss << std::endl;
-
-            return ss.str();
-        }*/ 
-
         std::string get_range(char a, char b, bool neg, bool expect, State& state){
             std::string tabs = std::string(state.m_Depth, '\t');
 
@@ -195,47 +241,31 @@ namespace trsrec{
 
         /*
          * {
-         *     size_t $my_label = 0;
+         *     ?expect? size_t $my_label = 0;
          *     while($?input[$iter] && ?($input[$iter] >= '$a' && $input[$iter] <= '$b')){
-         *         $my_label++;
+         *         ?expect? $my_label++;
          *         $iter++;
          *     }
          *
-         *     if(!$my_label){
+         *     ?expect? if(!$my_label){
          *         goto $label;
          *     }
          * }
          */
-        /*std::string expect_ranges(char a, char b, bool neg, std::string_view input, std::string_view iter, std::string_view label, size_t depth, std::string_view prefix, size_t* id){
-            std::string tabs = std::string(depth, '\t');
-
-            std::stringstream ss;
-            ss << tabs << "{" << std::endl;
-            ss << tabs << "\tsize_t " << prefix << "_" << *id << " = 0;" << std::endl;
-            ss << tabs << "\twhile(" << input << "[" << iter << "] && " << (neg?"!":"") << "(" << input << "[" << iter << "] >= \'" << a << "\' && " << input << "[" << iter << "] <= \'" << b << "\')){" << std::endl;
-            ss << tabs << "\t\t" << prefix << "_" << *id << "++;" << std::endl;
-            ss << tabs << "\t\t" << iter << "++;" << std::endl;
-            ss << tabs << "\t}" << std::endl;
-            ss << std::endl; 
-            ss << tabs << "\tif(!" << prefix << "_" << *id << "){" << std::endl;
-            ss << tabs << "\t\tgoto " << label << ";" << std::endl;
-            ss << tabs << "\t}" << std::endl;
-            ss << tabs << "}" << std::endl;
-            ss << std::endl;
-
-            (*id)++;
-
-            return ss.str();
-        }*/ 
-
         std::string get_ranges(char a, char b, bool neg, bool expect, State& state){
             std::string tabs = std::string(state.m_Depth, '\t');
 
             std::stringstream ss;
             ss << tabs << "{" << std::endl;
-            ss << tabs << "\tsize_t " << state.m_Prefix << "_" << state.m_ID << " = 0;" << std::endl;
+
+            if(expect)
+                ss << tabs << "\tsize_t " << state.m_Prefix << "_" << state.m_ID << " = 0;" << std::endl;
+            
             ss << tabs << "\twhile(" << state.m_Input << "[" << state.m_Iter << "] && " << (neg?"!":"") << "(" << state.m_Input << "[" << state.m_Iter << "] >= \'" << a << "\' && " << state.m_Input << "[" << state.m_Iter << "] <= \'" << b << "\')){" << std::endl;
-            ss << tabs << "\t\t" << state.m_Prefix << "_" << state.m_ID << "++;" << std::endl;
+            
+            if(expect)
+                ss << tabs << "\t\t" << state.m_Prefix << "_" << state.m_ID << "++;" << std::endl;
+            
             ss << tabs << "\t\t" << state.m_Iter << "++;" << std::endl;
             ss << tabs << "\t}" << std::endl;
             ss << std::endl;
@@ -249,45 +279,11 @@ namespace trsrec{
             ss << tabs << "}" << std::endl;
             ss << std::endl;
 
-            state.m_ID++;
+            if(expect)
+                state.m_ID++;
 
             return ss.str();
         }
-
-        /*
-         * if(?($input[$iter] >= '$a' && $input[$iter] <= '$b')){ // !(a >= b && a <= c) = a < b || a > c
-         *     $iter++;
-         * }
-         */
-        /*std::string get_range(char a, char b, bool neg, std::string_view input, std::string_view iter, size_t depth){
-            std::string tabs = std::string(depth, '\t');
-
-            std::stringstream ss;
-
-            ss << tabs << "if(" << input << "[" << iter << "] " << (neg?"<":">=") << " \'" << a << "\' " << (neg?"|| ":"&& ") << input << "[" << iter << "] " << (neg?">":"<=") << " \'" << b << "\'){" << std::endl;
-            ss << tabs << "\t" << iter << "++;" << std::endl;
-            ss << tabs << "}" << std::endl;
-            ss << std::endl;
-
-            return ss.str();
-        }*/
-
-        /*
-         * while($?input[$iter] && ?($input[$iter] >= '$a' && $input[$iter] <= '$b')){
-         *     $iter++;
-         * }
-         */
-        /*std::string get_ranges(char a, char b, bool neg, std::string_view input, std::string_view iter, size_t depth){
-            std::string tabs = std::string(depth, '\t');
-
-            std::stringstream ss;
-            ss << tabs << "while(" << input << "[" << iter << "] && " << (neg?"!":"") << "(" << input << "[" << iter << "] >= \'" << a << "\' && " << input << "[" << iter << "] <= \'" << b << "\')){" << std::endl;
-            ss << tabs << "\t" << iter << "++;" << std::endl;
-            ss << tabs << "}" << std::endl;
-            ss << std::endl; 
-
-            return ss.str();
-        }*/
 
         /*
          * switch($input[$iter]){
@@ -477,20 +473,18 @@ namespace trsrec{
                             ss << c::get_char(c, neg, expect, state);
                     } break;
                     case trsre::TRSRE_TOKEN_TYPE_ANY:
-                    case trsre::TRSRE_TOKEN_TYPE_EOE:
+                    case trsre::TRSRE_TOKEN_TYPE_EOE: {
+                        if(loop)
+                            ss << c::get_specjals(tok.m_Value[0], neg, expect, state);
+                        else
+                            ss << c::get_specjal(tok.m_Value[0], neg, expect, state);
+                    } break;
                     case trsre::TRSRE_TOKEN_TYPE_RANGE: {
                         const char* value = tok.m_Value.c_str();
                         char a = Program::get_lit(&value);
                         value++;
                         char b = Program::get_lit(&value);
-                        /*if(mod == trsre::TRSRE_TOKEN_MODE_QUESTION)
-                            ss << c::get_range(a, b, neg, state.m_Input, iter_label, depth);
-                        else if(mod == trsre::TRSRE_TOKEN_MODE_STAR)
-                            ss << c::get_ranges(a, b, neg, state.m_Input, iter_label, depth);
-                        else if(mod == trsre::TRSRE_TOKEN_MODE_PLUS)
-                            ss << c::expect_ranges(a, b, neg, state.m_Input, iter_label, end_label, depth, state.m_Prefix, &state.m_ID);
-                        else
-                            ss << c::expect_range(a, b, neg, state.m_Input, iter_label, end_label, depth);*/
+
                         if(loop)
                             ss << c::get_ranges(a, b, neg, expect, state);
                         else
@@ -595,20 +589,18 @@ namespace trsrec{
                             ss << c::get_char(c, neg, expect, state);
                     } break;
                     case trsre::TRSRE_TOKEN_TYPE_ANY:
-                    case trsre::TRSRE_TOKEN_TYPE_EOE:
+                    case trsre::TRSRE_TOKEN_TYPE_EOE: {
+                        if(loop)
+                            ss << c::get_specjals(tok.m_Value[0], neg, expect, state);
+                        else
+                            ss << c::get_specjal(tok.m_Value[0], neg, expect, state);
+                    } break;
                     case trsre::TRSRE_TOKEN_TYPE_RANGE: {
                         const char* value = tok.m_Value.c_str();
                         char a = Program::get_lit(&value);
                         value++;
                         char b = Program::get_lit(&value);
-                        /*if(mod == trsre::TRSRE_TOKEN_MODE_QUESTION)
-                            ss << c::get_range(a, b, neg, state.m_Input, iter_label, depth);
-                        else if(mod == trsre::TRSRE_TOKEN_MODE_STAR)
-                            ss << c::get_ranges(a, b, neg, state.m_Input, iter_label, depth);
-                        else if(mod == trsre::TRSRE_TOKEN_MODE_PLUS)
-                            ss << c::expect_ranges(a, b, neg, state.m_Input, iter_label, end_label, depth, state.m_Prefix, &state.m_ID);
-                        else
-                            ss << c::expect_range(a, b, neg, state.m_Input, iter_label, end_label, depth);*/ 
+
                         if(loop)
                             ss << c::get_ranges(a, b, neg, expect, state);
                         else
