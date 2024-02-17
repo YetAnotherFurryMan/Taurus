@@ -90,20 +90,6 @@ build build/trsrec: exe build/trsrec.dir/c.cpp.o build/trsrec.dir/log_token.cpp.
 
 build trsrec: phony build/trsrec
 
-build build/trscc.dir/main.cpp.o: cpp trscc/src/main.cpp
-  includes = -Itrscc/headers -Itrsap/headers -Itrscli/headers -Itrsre/headers 
-
-build build/trscc: exe build/trscc.dir/main.cpp.o build/libtrsap.a build/libtrscli.a build/libtrsre.a
-
-build trscc: phony build/trscc
-
-build build/trsc.dir/main.cpp.o: cpp trsc/src/main.cpp
-  includes = -Itrsc/headers -Itrsap/headers -Itrscli/headers -Itrsre/headers 
-
-build build/trsc: exe build/trsc.dir/main.cpp.o build/libtrsap.a build/libtrscli.a build/libtrsre.a
-
-build trsc: phony build/trsc
-
 build build/testware/trsre_match_char.dir/main.c.o: cc testware/trsre_match_char/main.c
   includes = -Itrsre/headers 
 

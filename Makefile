@@ -1,13 +1,13 @@
 BUILD ?= build
 
-src :=  $(wildcard trsap/src/*) $(wildcard trscli/src/*) $(wildcard trsre/src/*) $(wildcard trsre/ext/*) $(wildcard trsrec/src/*) $(wildcard trscc/src/*) $(wildcard trsc/src/*) $(wildcard testware/trsre_match_char/*.c testware/trsre_match_char/*.cpp) $(wildcard testware/trsre_match_group/*.c testware/trsre_match_group/*.cpp) $(wildcard testware/trsre_get_token/*.c testware/trsre_get_token/*.cpp)
+src :=  $(wildcard trsap/src/*) $(wildcard trscli/src/*) $(wildcard trsre/src/*) $(wildcard trsre/ext/*) $(wildcard trsrec/src/*) $(wildcard testware/trsre_match_char/*.c testware/trsre_match_char/*.cpp) $(wildcard testware/trsre_match_group/*.c testware/trsre_match_group/*.cpp) $(wildcard testware/trsre_get_token/*.c testware/trsre_get_token/*.cpp)
 obj := $(patsubst %,$(BUILD)/%.o,$(subst /ext/,-ext.dir/,$(subst /src/,.dir/,$(src)))) $(patsubst %,$(BUILD)/%.o,$(subst /trsre_match_char/,/trsre_match_char.dir/,$(filter testware/%,$(src)))) $(patsubst %,$(BUILD)/%.o,$(subst /trsre_match_group/,/trsre_match_group.dir/,$(filter testware/%,$(src)))) $(patsubst %,$(BUILD)/%.o,$(subst /trsre_get_token/,/trsre_get_token.dir/,$(filter testware/%,$(src))))
 
 .PHONY: all
-all: dirs  $(BUILD)/libtrsap.a $(BUILD)/libtrscli.a $(BUILD)/libtrsre.a $(BUILD)/libtrsre-ext.a $(BUILD)/trsrec $(BUILD)/trscc $(BUILD)/trsc $(BUILD)/testware/trsre_match_char $(BUILD)/testware/trsre_match_group $(BUILD)/testware/trsre_get_token
+all: dirs  $(BUILD)/libtrsap.a $(BUILD)/libtrscli.a $(BUILD)/libtrsre.a $(BUILD)/libtrsre-ext.a $(BUILD)/trsrec $(BUILD)/testware/trsre_match_char $(BUILD)/testware/trsre_match_group $(BUILD)/testware/trsre_get_token
 
-dirs: $(BUILD) $(BUILD)/trsap.dir $(BUILD)/trscli.dir $(BUILD)/trsre-ext.dir $(BUILD)/trsre.dir $(BUILD)/trsrec.dir $(BUILD)/trscc.dir $(BUILD)/trsc.dir $(BUILD)/testware $(BUILD)/testware/trsre_match_char.dir $(BUILD)/testware/trsre_match_group.dir $(BUILD)/testware/trsre_get_token.dir
-$(BUILD) $(BUILD)/trsap.dir $(BUILD)/trscli.dir $(BUILD)/trsre-ext.dir $(BUILD)/trsre.dir $(BUILD)/trsrec.dir $(BUILD)/trscc.dir $(BUILD)/trsc.dir $(BUILD)/testware $(BUILD)/testware/trsre_match_char.dir $(BUILD)/testware/trsre_match_group.dir $(BUILD)/testware/trsre_get_token.dir:
+dirs: $(BUILD) $(BUILD)/trsap.dir $(BUILD)/trscli.dir $(BUILD)/trsre-ext.dir $(BUILD)/trsre.dir $(BUILD)/trsrec.dir $(BUILD)/testware $(BUILD)/testware/trsre_match_char.dir $(BUILD)/testware/trsre_match_group.dir $(BUILD)/testware/trsre_get_token.dir
+$(BUILD) $(BUILD)/trsap.dir $(BUILD)/trscli.dir $(BUILD)/trsre-ext.dir $(BUILD)/trsre.dir $(BUILD)/trsrec.dir $(BUILD)/testware $(BUILD)/testware/trsre_match_char.dir $(BUILD)/testware/trsre_match_group.dir $(BUILD)/testware/trsre_get_token.dir:
 	@mkdir $@
 
 clean:
@@ -70,30 +70,6 @@ $(filter $(BUILD)/trsrec.dir/%.cpp.o, $(obj)):$(BUILD)/trsrec.dir/%.o:trsrec/src
 	@$(CXX) -Wall -Wextra -Wpedantic -Itrsrec/headers -Itrsap/headers -Itrscli/headers -Itrsre/headers -Itrsre-ext/headers -o $@ -c $^
 
 $(BUILD)/trsrec: $(filter $(BUILD)/trsrec.dir/%, $(obj)) $(BUILD)/libtrsap.a $(BUILD)/libtrscli.a $(BUILD)/libtrsre.a $(BUILD)/libtrsre-ext.a
-	@echo Building executable $@
-	@$(CXX) -o $@ $^
-
-$(filter $(BUILD)/trscc.dir/%.c.o, $(obj)):$(BUILD)/trscc.dir/%.o:trscc/src/%
-	@echo Building object $@
-	@$(CC) -Wall -Wextra -Wpedantic -Itrscc/headers -Itrsap/headers -Itrscli/headers -Itrsre/headers -o $@ -c $^
-
-$(filter $(BUILD)/trscc.dir/%.cpp.o, $(obj)):$(BUILD)/trscc.dir/%.o:trscc/src/%
-	@echo Building object $@
-	@$(CXX) -Wall -Wextra -Wpedantic -Itrscc/headers -Itrsap/headers -Itrscli/headers -Itrsre/headers -o $@ -c $^
-
-$(BUILD)/trscc: $(filter $(BUILD)/trscc.dir/%, $(obj)) $(BUILD)/libtrsap.a $(BUILD)/libtrscli.a $(BUILD)/libtrsre.a
-	@echo Building executable $@
-	@$(CXX) -o $@ $^
-
-$(filter $(BUILD)/trsc.dir/%.c.o, $(obj)):$(BUILD)/trsc.dir/%.o:trsc/src/%
-	@echo Building object $@
-	@$(CC) -Wall -Wextra -Wpedantic -Itrsc/headers -Itrsap/headers -Itrscli/headers -Itrsre/headers -o $@ -c $^
-
-$(filter $(BUILD)/trsc.dir/%.cpp.o, $(obj)):$(BUILD)/trsc.dir/%.o:trsc/src/%
-	@echo Building object $@
-	@$(CXX) -Wall -Wextra -Wpedantic -Itrsc/headers -Itrsap/headers -Itrscli/headers -Itrsre/headers -o $@ -c $^
-
-$(BUILD)/trsc: $(filter $(BUILD)/trsc.dir/%, $(obj)) $(BUILD)/libtrsap.a $(BUILD)/libtrscli.a $(BUILD)/libtrsre.a
 	@echo Building executable $@
 	@$(CXX) -o $@ $^
 

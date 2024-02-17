@@ -55,24 +55,6 @@ target_link_libraries(trsrec PUBLIC trscli)
 target_link_libraries(trsrec PUBLIC trsre)
 target_link_libraries(trsrec PUBLIC trsre-ext)
 
-add_executable(trscc
-	trscc/src/main.cpp
-)
-
-target_include_directories(trscc PRIVATE trscc/headers)
-target_link_libraries(trscc PUBLIC trsap)
-target_link_libraries(trscc PUBLIC trscli)
-target_link_libraries(trscc PUBLIC trsre)
-
-add_executable(trsc
-	trsc/src/main.cpp
-)
-
-target_include_directories(trsc PRIVATE trsc/headers)
-target_link_libraries(trsc PUBLIC trsap)
-target_link_libraries(trsc PUBLIC trscli)
-target_link_libraries(trsc PUBLIC trsre)
-
 add_executable(trsre_match_char.test
 	testware/trsre_match_char/main.c
 )
