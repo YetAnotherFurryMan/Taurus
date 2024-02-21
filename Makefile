@@ -1,13 +1,13 @@
 BUILD ?= build
 
-src :=  $(wildcard trsap/src/*) $(wildcard trscli/src/*) $(wildcard trsre/src/*) $(wildcard trsre/ext/*) $(wildcard trsrec/src/*) $(wildcard testware/trsre_match_char/*.c testware/trsre_match_char/*.cpp) $(wildcard testware/trsre_match_group/*.c testware/trsre_match_group/*.cpp) $(wildcard testware/trsre_get_token/*.c testware/trsre_get_token/*.cpp)
-obj := $(patsubst %,$(BUILD)/%.o,$(subst /ext/,-ext.dir/,$(subst /src/,.dir/,$(src)))) $(patsubst %,$(BUILD)/%.o,$(subst /trsre_match_char/,/trsre_match_char.dir/,$(filter testware/%,$(src)))) $(patsubst %,$(BUILD)/%.o,$(subst /trsre_match_group/,/trsre_match_group.dir/,$(filter testware/%,$(src)))) $(patsubst %,$(BUILD)/%.o,$(subst /trsre_get_token/,/trsre_get_token.dir/,$(filter testware/%,$(src))))
+src :=  $(wildcard trsap/src/*) $(wildcard trscli/src/*) $(wildcard trsre/src/*) $(wildcard trsre/ext/*) $(wildcard trsrec/src/*) $(wildcard testware/trsre_match_char/*.c testware/trsre_match_char/*.cpp) $(wildcard testware/trsre_match_group/*.c testware/trsre_match_group/*.cpp) $(wildcard testware/trsre_get_token/*.c testware/trsre_get_token/*.cpp) $(wildcard testware/trsrec/*.c testware/trsrec/*.cpp)
+obj := $(patsubst %,$(BUILD)/%.o,$(subst /ext/,-ext.dir/,$(subst /src/,.dir/,$(src)))) $(patsubst %,$(BUILD)/%.o,$(subst /trsre_match_char/,/trsre_match_char.dir/,$(filter testware/%,$(src)))) $(patsubst %,$(BUILD)/%.o,$(subst /trsre_match_group/,/trsre_match_group.dir/,$(filter testware/%,$(src)))) $(patsubst %,$(BUILD)/%.o,$(subst /trsre_get_token/,/trsre_get_token.dir/,$(filter testware/%,$(src)))) $(patsubst %,$(BUILD)/%.o,$(subst /trsrec/,/trsrec.dir/,$(filter testware/%,$(src))))
 
 .PHONY: all
-all: dirs  $(BUILD)/libtrsap.a $(BUILD)/libtrscli.a $(BUILD)/libtrsre.a $(BUILD)/libtrsre-ext.a $(BUILD)/trsrec $(BUILD)/testware/trsre_match_char $(BUILD)/testware/trsre_match_group $(BUILD)/testware/trsre_get_token
+all: dirs  $(BUILD)/libtrsap.a $(BUILD)/libtrscli.a $(BUILD)/libtrsre.a $(BUILD)/libtrsre-ext.a $(BUILD)/trsrec $(BUILD)/testware/trsre_match_char $(BUILD)/testware/trsre_match_group $(BUILD)/testware/trsre_get_token $(BUILD)/testware/trsrec
 
-dirs: $(BUILD) $(BUILD)/trsap.dir $(BUILD)/trscli.dir $(BUILD)/trsre-ext.dir $(BUILD)/trsre.dir $(BUILD)/trsrec.dir $(BUILD)/testware $(BUILD)/testware/trsre_match_char.dir $(BUILD)/testware/trsre_match_group.dir $(BUILD)/testware/trsre_get_token.dir
-$(BUILD) $(BUILD)/trsap.dir $(BUILD)/trscli.dir $(BUILD)/trsre-ext.dir $(BUILD)/trsre.dir $(BUILD)/trsrec.dir $(BUILD)/testware $(BUILD)/testware/trsre_match_char.dir $(BUILD)/testware/trsre_match_group.dir $(BUILD)/testware/trsre_get_token.dir:
+dirs: $(BUILD) $(BUILD)/trsap.dir $(BUILD)/trscli.dir $(BUILD)/trsre-ext.dir $(BUILD)/trsre.dir $(BUILD)/trsrec.dir $(BUILD)/testware $(BUILD)/testware/trsre_match_char.dir $(BUILD)/testware/trsre_match_group.dir $(BUILD)/testware/trsre_get_token.dir $(BUILD)/testware/trsrec.dir
+$(BUILD) $(BUILD)/trsap.dir $(BUILD)/trscli.dir $(BUILD)/trsre-ext.dir $(BUILD)/trsre.dir $(BUILD)/trsrec.dir $(BUILD)/testware $(BUILD)/testware/trsre_match_char.dir $(BUILD)/testware/trsre_match_group.dir $(BUILD)/testware/trsre_get_token.dir $(BUILD)/testware/trsrec.dir:
 	@mkdir $@
 
 clean:
@@ -106,6 +106,18 @@ $(filter $(BUILD)/testware/trsre_get_token.dir/%.cpp.o, $(obj)):$(BUILD)/trsre_g
 	@$(CXX) -Wall -Wextra -Wpedantic -Itrsre/headers -Itrsre-ext/headers -o $@ -c $^
 
 $(BUILD)/testware/trsre_get_token: $(filter $(BUILD)/testware/trsre_get_token.dir/%, $(obj)) $(BUILD)/libtrsre.a $(BUILD)/libtrsre-ext.a
+	@echo Building executable $@
+	@$(CXX) -o $@ $^
+
+$(filter $(BUILD)/testware/trsrec.dir/%.c.o, $(obj)):$(BUILD)/testware/trsrec.dir/%.o:testware/trsrec/%
+	@echo Building object $@
+	@$(CC) -Wall -Wextra -Wpedantic -o $@ -c $^
+
+$(filter $(BUILD)/testware/trsrec.dir/%.cpp.o, $(obj)):$(BUILD)/trsrec.dir/%.o:trsrec/%
+	@echo Building object $@
+	@$(CXX) -Wall -Wextra -Wpedantic -o $@ -c $^
+
+$(BUILD)/testware/trsrec: $(filter $(BUILD)/testware/trsrec.dir/%, $(obj))
 	@echo Building executable $@
 	@$(CXX) -o $@ $^
 

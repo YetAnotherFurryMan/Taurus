@@ -395,6 +395,7 @@ namespace trsrec{
                 ss << tabs << "\t\t\t" << state.m_Prefix << "_" << id1 << "++;" << std::endl;
                 ss << tabs << "\t\t\tgoto " << state.m_Prefix << "_" << id2 << ";" << std::endl;
             } else if(expect){
+                ss << tabs << "\t\tdefault:" << std::endl;
                 ss << tabs << "\t\t\tif(!" << state.m_Prefix << "_" << id1 << ")" << std::endl;
                 ss << tabs << "\t\t\t\tgoto " << state.m_Label << ";" << std::endl;
             }

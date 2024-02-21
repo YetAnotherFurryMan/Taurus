@@ -83,6 +83,8 @@ void parse(const char* rule, char* buffer, size_t len){
 }
 
 int main(int argc, const char** argv){
+	argc--; argv++;
+
 	if(argc < 3)
 		return -1;
 

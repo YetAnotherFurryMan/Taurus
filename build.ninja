@@ -2,7 +2,7 @@ ninja_required_version = 1.5
 
 builddir = build
 
-cflags = -Wall -Wextra -Wpedantic -std=c17
+cflags = -Wall -Wextra -Wpedantic -std=c17 -std=gnu17
 cxxflags = -Wall -Wextra -Wpedantic -std=c++17
 ldflags = -Lbuild
 
@@ -110,4 +110,11 @@ build build/testware/trsre_get_token.dir/main.c.o: cc testware/trsre_get_token/m
 build build/testware/trsre_get_token.test: exe build/testware/trsre_get_token.dir/main.c.o build/libtrsre.a build/libtrsre-ext.a
 
 build trsre_get_token.test: phony build/testware/trsre_get_token.test
+
+build build/testware/trsrec.dir/main.c.o: cc testware/trsrec/main.c
+  includes = 
+
+build build/testware/trsrec.test: exe build/testware/trsrec.dir/main.c.o
+
+build trsrec.test: phony build/testware/trsrec.test
 

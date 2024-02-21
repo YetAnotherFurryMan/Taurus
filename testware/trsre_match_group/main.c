@@ -4,7 +4,8 @@
 #include <trsre.h>
 
 int main(int argc, const char** argv){
-	argc--; argv++;
+	argc--; argv++; // Program
+	argc--; argv++; // Name
 	
 	if(argc < 4) 
 		return 1;
@@ -26,9 +27,11 @@ int main(int argc, const char** argv){
 	if(ti != t || r < 0){
 		if(rc == '-')
 			r *= -1;
-		printf("Test FAILED!!!\n\tr = %ld\n\tt = %ld\n", r, t);
+		printf("\tr = %ld\n\tt = %ld\n\tFAILED\n\n", r, t);
 		return 1;
 	}
+
+	printf("\tPASSED\n\n");
 	
 	return 0;
 }
